@@ -31,7 +31,12 @@ import {
   List,
   Flame,
   LayoutGrid,
-  TrendingDown
+  TrendingDown,
+  Film,
+  Headphones,
+  Pause,
+  CalendarDays,
+  UserRound
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { NEWS_DATA, TOOLS_DATA, GLOSSARY_DATA, SPECIALS_DATA } from './data';
@@ -41,13 +46,26 @@ import { Card, Badge } from './components/Common';
 import { ScrollProgress, MouseGlow } from './components/Effects';
 import { TimelineItem, ArticleCard } from './components/NewsCards';
 
-type ListTab = 'flash' | 'article' | 'tutorial' | 'knowledge';
+type ListTab = 'flash' | 'article' | 'tutorial' | 'knowledge' | 'video' | 'podcast';
 type SearchTab = 'all' | ListTab;
-type View = 'home' | 'portal' | 'list' | 'detail' | 'term' | 'tool' | 'section' | 'search';
+type View =
+  | 'home'
+  | 'portal'
+  | 'list'
+  | 'detail'
+  | 'term'
+  | 'tool'
+  | 'section'
+  | 'search'
+  | 'video'
+  | 'podcast'
+  | 'learning_path';
 type ContentSort = 'hot' | 'latest' | 'most_read';
 type ContentDateRange = 'all' | '3d' | '7d' | '30d';
 type FlashViewMode = 'compact' | 'detail';
 type ContentLayoutMode = 'list' | 'card';
+type SourceFilter = 'all' | 'anthropic' | 'openai' | 'meta' | 'google';
+type ThemeFilter = 'all' | 'model' | 'hardware' | 'policy' | 'open_source';
 
 type WaterfallBlock = {
   id: string;
@@ -87,9 +105,283 @@ type FlashTickerItem = {
   slug: string;
 };
 
+type VideoItem = {
+  id: string;
+  slug: string;
+  title: string;
+  cover: string;
+  summary: string;
+  author: string;
+  date: string;
+  duration: string;
+  views: number;
+  likes: number;
+  tags: string[];
+  sourceName: string;
+  sourceUrl: string;
+  videoUrl: string;
+};
+
+type PodcastItem = {
+  id: string;
+  slug: string;
+  title: string;
+  cover: string;
+  summary: string;
+  host: string;
+  date: string;
+  duration: string;
+  plays: number;
+  likes: number;
+  tags: string[];
+  sourceName: string;
+  sourceUrl: string;
+  audioUrl: string;
+  transcript: string[];
+};
+
+type LearningPathDay = {
+  id: string;
+  dayLabel: string;
+  title: string;
+  trackTag: string;
+  summary: string;
+  highlights: string[];
+  deliverable: string;
+  targetHash: string;
+};
+
+const LEARNING_PATH_7D: LearningPathDay[] = [
+  {
+    id: 'path-day-1',
+    dayLabel: 'DAY 01',
+    title: '认知搭建：LLM 与术语地图',
+    trackTag: '基础认知',
+    summary: '快速建立模型、Token、上下文窗口与推理成本的统一认知。',
+    highlights: ['阅读 2 篇入门文章', '完成术语百科 5 个核心词条'],
+    deliverable: '一页术语速记卡 + 模型能力对照表',
+    targetHash: '#/list?tab=knowledge'
+  },
+  {
+    id: 'path-day-2',
+    dayLabel: 'DAY 02',
+    title: '提示工程：可复用 Prompt 模板',
+    trackTag: 'Prompt',
+    summary: '围绕结构化输出、角色设定和约束条件，形成可复用模板。',
+    highlights: ['拆解 3 种提示结构', '完成 1 组多轮提示实验'],
+    deliverable: 'Prompt 模板库 v1（3-5 条）',
+    targetHash: '#/list?tab=tutorial'
+  },
+  {
+    id: 'path-day-3',
+    dayLabel: 'DAY 03',
+    title: '工作流：从单点调用到链路编排',
+    trackTag: 'Skill',
+    summary: '把检索、生成、校验串成一条可执行流程，形成基础自动化。',
+    highlights: ['配置 1 条内容工作流', '增加结果校验步骤'],
+    deliverable: '可复用工作流草图 + 参数说明',
+    targetHash: '#/list?tab=article'
+  },
+  {
+    id: 'path-day-4',
+    dayLabel: 'DAY 04',
+    title: '模型实战：微调与评测入门',
+    trackTag: '实战教程',
+    summary: '理解微调边界与评测指标，避免只看单一分数做决策。',
+    highlights: ['跑通 1 次微调演示', '记录成本/效果变化'],
+    deliverable: '评测记录表 + 调参备忘',
+    targetHash: '#/list?tab=tutorial'
+  },
+  {
+    id: 'path-day-5',
+    dayLabel: 'DAY 05',
+    title: 'Agent 设计：任务拆解与工具调用',
+    trackTag: 'Agent',
+    summary: '用任务规划 + 工具路由的方式，提高复杂任务成功率。',
+    highlights: ['定义 1 套 Agent 目标', '补充失败回退策略'],
+    deliverable: 'Agent 流程图 + 失败兜底清单',
+    targetHash: '#/list?tab=knowledge'
+  },
+  {
+    id: 'path-day-6',
+    dayLabel: 'DAY 06',
+    title: '安全与治理：合规检查清单',
+    trackTag: '安全合规',
+    summary: '把提示注入、数据泄露和版权风险纳入发布前检查。',
+    highlights: ['梳理 6 项风险点', '完成 1 版安全策略模板'],
+    deliverable: '发布前检查清单 v1',
+    targetHash: '#/list?tab=article'
+  },
+  {
+    id: 'path-day-7',
+    dayLabel: 'DAY 07',
+    title: '综合演练：7 天成果复盘',
+    trackTag: '项目收官',
+    summary: '汇总一周产出并构建可复用模板，形成后续迭代基线。',
+    highlights: ['整理关键数据与结论', '规划下一阶段目标'],
+    deliverable: '学习复盘文档 + 下周迭代计划',
+    targetHash: '#/list?tab=article'
+  }
+];
+
+const SOURCE_FILTER_OPTIONS: Array<{ value: SourceFilter; label: string }> = [
+  { value: 'all', label: '全部来源' },
+  { value: 'anthropic', label: 'Anthropic' },
+  { value: 'openai', label: 'OpenAI' },
+  { value: 'meta', label: 'Meta' },
+  { value: 'google', label: 'Google' }
+];
+
+const THEME_FILTER_OPTIONS: Array<{ value: ThemeFilter; label: string }> = [
+  { value: 'all', label: '全部主题' },
+  { value: 'model', label: '模型' },
+  { value: 'hardware', label: '硬件' },
+  { value: 'policy', label: '政策' },
+  { value: 'open_source', label: '开源' }
+];
+
+const VIDEO_DATA: VideoItem[] = [
+  {
+    id: 'video-1',
+    slug: 'claude-3-5-coding-breakthrough',
+    title: 'Claude 3.5 Sonnet 实测：代码修复与重构效率全面提升',
+    cover: 'https://picsum.photos/seed/video-claude/1280/720',
+    summary: '用真实项目任务复盘 Claude 3.5 在 bug 定位、代码改写和单测生成中的表现边界。',
+    author: 'Aistore Video Lab',
+    date: '2026-03-25',
+    duration: '12:38',
+    views: 32800,
+    likes: 1680,
+    tags: ['模型评测', 'Anthropic', '编码'],
+    sourceName: 'Aistore 视频频道',
+    sourceUrl: 'https://www.bilibili.com',
+    videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
+  },
+  {
+    id: 'video-2',
+    slug: 'gpt-agent-workflow-demo',
+    title: 'GPT Agent 工作流演示：从需求到自动执行的完整链路',
+    cover: 'https://picsum.photos/seed/video-agent/1280/720',
+    summary: '拆解一个可复用 Agent 工作流，展示任务规划、工具调用与结果校验。',
+    author: 'Open Workflow Club',
+    date: '2026-03-24',
+    duration: '18:22',
+    views: 27600,
+    likes: 1320,
+    tags: ['OpenAI', 'Agent', '实战'],
+    sourceName: 'Aistore 视频频道',
+    sourceUrl: 'https://www.bilibili.com',
+    videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
+  },
+  {
+    id: 'video-3',
+    slug: 'gemini-context-window-practice',
+    title: 'Gemini 长上下文实战：200万 Token 到底能做什么',
+    cover: 'https://picsum.photos/seed/video-gemini/1280/720',
+    summary: '从文档分析、代码审计到多模态检索，验证长上下文在业务中的真实收益。',
+    author: 'Model Frontier',
+    date: '2026-03-23',
+    duration: '09:47',
+    views: 19400,
+    likes: 906,
+    tags: ['Google', '模型', '多模态'],
+    sourceName: 'Aistore 视频频道',
+    sourceUrl: 'https://www.bilibili.com',
+    videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
+  },
+  {
+    id: 'video-4',
+    slug: 'meta-open-source-model-roadmap',
+    title: 'Meta 开源模型路线图：Llama 生态如何落地企业应用',
+    cover: 'https://picsum.photos/seed/video-llama/1280/720',
+    summary: '围绕 Llama 的工具链、部署形态和社区资源，梳理开源方案选型路径。',
+    author: 'Open Source AI',
+    date: '2026-03-22',
+    duration: '14:05',
+    views: 22100,
+    likes: 1189,
+    tags: ['Meta', '开源', '企业应用'],
+    sourceName: 'Aistore 视频频道',
+    sourceUrl: 'https://www.bilibili.com',
+    videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
+  }
+];
+
+const PODCAST_DATA: PodcastItem[] = [
+  {
+    id: 'podcast-1',
+    slug: 'ai-weekly-01-model-product-gap',
+    title: 'AI 周度对谈 01：模型能力与产品落地之间的“最后一公里”',
+    cover: 'https://picsum.photos/seed/podcast-1/960/540',
+    summary: '讨论从 Demo 到上线最容易被忽略的评测、成本和稳定性问题。',
+    host: 'Aistore Podcast',
+    date: '2026-03-25',
+    duration: '36:20',
+    plays: 12800,
+    likes: 920,
+    tags: ['产品落地', '模型评测'],
+    sourceName: 'Aistore 博客频道',
+    sourceUrl: 'https://caip.org.cn/aiCommunity/ai-podcast',
+    audioUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3',
+    transcript: [
+      '本期围绕“模型能力和产品指标如何对齐”展开讨论，重点拆解上线阶段最常见的三类误区。',
+      '我们建议先定义业务成功标准，再反推模型评测维度，避免只看通用 benchmark 分数。',
+      '在真实环境中，稳定性、可观测性和回退机制往往比单次效果更关键。'
+    ]
+  },
+  {
+    id: 'podcast-2',
+    slug: 'ai-weekly-02-agent-evaluation',
+    title: 'AI 周度对谈 02：Agent 系统如何做可解释评估',
+    cover: 'https://picsum.photos/seed/podcast-2/960/540',
+    summary: '从任务拆解、工具选择到失败回放，建立一套可解释的 Agent 评估框架。',
+    host: 'AI Systems Roundtable',
+    date: '2026-03-24',
+    duration: '42:08',
+    plays: 9600,
+    likes: 740,
+    tags: ['Agent', '评测方法'],
+    sourceName: 'Aistore 博客频道',
+    sourceUrl: 'https://caip.org.cn/aiCommunity/ai-podcast',
+    audioUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3',
+    transcript: [
+      'Agent 评估不能只看任务完成率，还应同时关注路径质量与资源消耗。',
+      '建议记录每一步调用上下文，建立失败样本库，便于后续快速定位回归问题。',
+      '把评估过程产品化，才能在团队扩张时保持一致的交付质量。'
+    ]
+  },
+  {
+    id: 'podcast-3',
+    slug: 'ai-weekly-03-policy-and-open-source',
+    title: 'AI 周度对谈 03：政策收紧下，开源生态会走向何处？',
+    cover: 'https://picsum.photos/seed/podcast-3/960/540',
+    summary: '结合近期监管动态与社区趋势，讨论开源模型的机会与边界。',
+    host: 'Policy x OpenSource',
+    date: '2026-03-23',
+    duration: '33:16',
+    plays: 7300,
+    likes: 518,
+    tags: ['政策', '开源'],
+    sourceName: 'Aistore 博客频道',
+    sourceUrl: 'https://caip.org.cn/aiCommunity/ai-podcast',
+    audioUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-audio/t-rex-roar.mp3',
+    transcript: [
+      '政策和开源并不是对立关系，关键在于治理机制是否清晰、透明且可追溯。',
+      '企业在使用开源模型时，应补齐版权、数据边界和责任链条的风险控制。',
+      '未来竞争重点将转向“开源能力 + 工程交付”的组合效率。'
+    ]
+  }
+];
+
 const buildTutorialFeed = (items: NewsItem[]): NewsItem[] => {
   const existing = items.filter((item) => item.type === 'tutorial');
-  if (existing.length > 0) return existing;
+  const levelMap: Array<'beginner' | 'intermediate' | 'expert'> = ['beginner', 'intermediate', 'expert', 'intermediate'];
+  if (existing.length > 0) {
+    return existing.map((item, idx) => ({
+      ...item,
+      difficulty: item.difficulty || levelMap[idx % levelMap.length]
+    }));
+  }
 
   return items
     .filter((item) => item.type === 'article')
@@ -103,7 +395,8 @@ const buildTutorialFeed = (items: NewsItem[]): NewsItem[] => {
       categoryTag: '实战教程',
       summary: `${item.summary} 本教程版补充了操作步骤、环境准备与常见问题。`,
       date: `2026-03-${String(22 - idx).padStart(2, '0')}`,
-      readCount: Math.max(6800, Math.round(item.readCount * 0.72))
+      readCount: Math.max(6800, Math.round(item.readCount * 0.72)),
+      difficulty: levelMap[idx % levelMap.length]
     }));
 };
 
@@ -130,6 +423,96 @@ const parseDateValue = (date: string): number => new Date(`${date}T00:00:00+08:0
 const parseDateTimeValue = (date: string, time?: string): number => {
   const normalized = (time || '00:00').padStart(5, '0');
   return new Date(`${date}T${normalized}:00+08:00`).getTime();
+};
+
+const getNewsSource = (item: NewsItem): SourceFilter => {
+  const text = `${item.title} ${item.summary} ${item.sourceName}`.toLowerCase();
+  if (text.includes('anthropic') || text.includes('claude')) return 'anthropic';
+  if (text.includes('openai') || text.includes('gpt') || text.includes('sora')) return 'openai';
+  if (text.includes('meta') || text.includes('llama')) return 'meta';
+  if (text.includes('google') || text.includes('gemini')) return 'google';
+  return 'openai';
+};
+
+const getNewsTheme = (item: NewsItem): ThemeFilter => {
+  const text = `${item.title} ${item.summary} ${item.categoryTag}`.toLowerCase();
+  if (
+    text.includes('gpu') ||
+    text.includes('芯片') ||
+    text.includes('硬件') ||
+    text.includes('blackwell') ||
+    text.includes('nvidia') ||
+    text.includes('英伟达')
+  ) {
+    return 'hardware';
+  }
+  if (
+    text.includes('法案') ||
+    text.includes('监管') ||
+    text.includes('政策') ||
+    text.includes('法律') ||
+    text.includes('合规') ||
+    text.includes('欧盟')
+  ) {
+    return 'policy';
+  }
+  if (text.includes('开源') || text.includes('opensource') || text.includes('open source')) {
+    return 'open_source';
+  }
+  return 'model';
+};
+
+const getVideoSource = (item: VideoItem): SourceFilter => {
+  const text = `${item.title} ${item.summary} ${item.sourceName} ${item.author}`.toLowerCase();
+  if (text.includes('anthropic') || text.includes('claude')) return 'anthropic';
+  if (text.includes('openai') || text.includes('gpt') || text.includes('sora')) return 'openai';
+  if (text.includes('meta') || text.includes('llama')) return 'meta';
+  if (text.includes('google') || text.includes('gemini')) return 'google';
+  return 'openai';
+};
+
+const getVideoTheme = (item: VideoItem): ThemeFilter => {
+  const text = `${item.title} ${item.summary} ${item.tags.join(' ')}`.toLowerCase();
+  if (text.includes('硬件') || text.includes('芯片') || text.includes('gpu')) return 'hardware';
+  if (text.includes('政策') || text.includes('监管') || text.includes('合规') || text.includes('法案')) return 'policy';
+  if (text.includes('开源') || text.includes('open source')) return 'open_source';
+  return 'model';
+};
+
+const getPodcastSource = (item: PodcastItem): SourceFilter => {
+  const text = `${item.title} ${item.summary} ${item.host}`.toLowerCase();
+  if (text.includes('anthropic') || text.includes('claude')) return 'anthropic';
+  if (text.includes('openai') || text.includes('gpt') || text.includes('sora')) return 'openai';
+  if (text.includes('meta') || text.includes('llama')) return 'meta';
+  if (text.includes('google') || text.includes('gemini')) return 'google';
+  return 'openai';
+};
+
+const getPodcastTheme = (item: PodcastItem): ThemeFilter => {
+  const text = `${item.title} ${item.summary} ${item.tags.join(' ')}`.toLowerCase();
+  if (text.includes('硬件') || text.includes('芯片') || text.includes('gpu')) return 'hardware';
+  if (text.includes('政策') || text.includes('监管') || text.includes('合规') || text.includes('法案')) return 'policy';
+  if (text.includes('开源') || text.includes('open source')) return 'open_source';
+  return 'model';
+};
+
+const getVideoTopicTags = (item: VideoItem): string[] => Array.from(new Set(item.tags));
+const getPodcastTopicTags = (item: PodcastItem): string[] => Array.from(new Set(item.tags));
+
+const formatAudioTime = (seconds: number): string => {
+  if (!Number.isFinite(seconds) || seconds < 0) return '00:00';
+  const safe = Math.floor(seconds);
+  const mins = Math.floor(safe / 60);
+  const secs = safe % 60;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+};
+
+const parseDurationLabelToSeconds = (duration: string): number => {
+  const [minText, secText] = duration.split(':');
+  const mins = Number(minText);
+  const secs = Number(secText);
+  if (!Number.isFinite(mins) || !Number.isFinite(secs)) return 0;
+  return mins * 60 + secs;
 };
 
 const getNewsTopicTags = (item: NewsItem): string[] => {
@@ -265,6 +648,20 @@ const getNewsModuleLabel = (news: NewsItem): string => {
   return '深度文章';
 };
 
+const getTutorialLevel = (item: NewsItem): string | null => {
+  if (item.type !== 'tutorial') return null;
+  if (item.difficulty === 'expert') return '专家';
+  if (item.difficulty === 'intermediate') return '进阶';
+  if (item.difficulty === 'beginner') return '入门';
+  return '入门';
+};
+
+const getTutorialLevelBadgeClass = (level: string): string => {
+  if (level === '专家') return 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-400/35';
+  if (level === '进阶') return 'bg-cyan-500/15 text-cyan-300 border-cyan-400/35';
+  return 'bg-lime-500/15 text-lime-300 border-lime-400/35';
+};
+
 const NewsHorizontalCard: React.FC<{
   item: NewsItem;
   onClick: () => void;
@@ -279,12 +676,90 @@ const NewsHorizontalCard: React.FC<{
     <div className="min-w-0 flex-1">
       <div className="flex items-center gap-2 mb-2 flex-wrap">
         <Badge label={item.categoryTag} />
+        {item.type === 'tutorial' && getTutorialLevel(item) && (
+          <Badge
+            label={getTutorialLevel(item) as string}
+            className={getTutorialLevelBadgeClass(getTutorialLevel(item) as string)}
+          />
+        )}
       </div>
       <h4 className="text-lg font-bold text-white line-clamp-2 mb-2">{item.title}</h4>
       <p className="text-sm text-gray-400 line-clamp-2 mb-3">{item.summary}</p>
       <div className="flex items-center justify-between text-xs text-gray-500 font-bold uppercase tracking-widest">
         <span>{item.date}</span>
         <span className="flex items-center gap-1"><Flame size={12} fill="currentColor" className="text-orange-400" /> {item.importance}</span>
+      </div>
+    </div>
+  </button>
+);
+
+const VideoHorizontalCard: React.FC<{
+  item: VideoItem;
+  onClick: () => void;
+}> = ({ item, onClick }) => (
+  <button
+    onClick={onClick}
+    className="w-full text-left rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors p-4 md:p-5 flex gap-4"
+  >
+    <div className="relative w-36 md:w-44 h-24 md:h-28 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
+      <img src={item.cover} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+      <span className="absolute right-1.5 bottom-1.5 px-1.5 py-0.5 rounded bg-black/65 text-[10px] font-bold text-white">{item.duration}</span>
+    </div>
+    <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <Badge label="优质视频" className="bg-pink-500/15 text-pink-300 border-pink-400/35" />
+        {item.tags.slice(0, 1).map((tag) => (
+          <Badge key={tag} label={tag} className="bg-white/[0.02] text-gray-300 border-white/10" />
+        ))}
+      </div>
+      <h4 className="text-lg font-bold text-white line-clamp-2 mb-2">{item.title}</h4>
+      <p className="text-sm text-gray-400 line-clamp-2 mb-3">{item.summary}</p>
+      <div className="flex items-center justify-between text-xs text-gray-500 font-bold uppercase tracking-widest">
+        <span>{item.date}</span>
+        <span className="flex items-center gap-1"><Eye size={12} /> {item.views.toLocaleString()}</span>
+      </div>
+    </div>
+  </button>
+);
+
+const PodcastHorizontalCard: React.FC<{
+  item: PodcastItem;
+  onClick: () => void;
+  isPlaying: boolean;
+  onPreview: (e: React.MouseEvent) => void;
+}> = ({ item, onClick, isPlaying, onPreview }) => (
+  <button
+    onClick={onClick}
+    className="w-full text-left rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors p-4 md:p-5 flex gap-4"
+  >
+    <div className="relative w-36 md:w-44 h-24 md:h-28 rounded-xl overflow-hidden flex-shrink-0 border border-white/10">
+      <img src={item.cover} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+      <button
+        onClick={onPreview}
+        className={cn(
+          'absolute right-2 bottom-2 w-8 h-8 rounded-full border grid place-items-center transition-colors',
+          isPlaying
+            ? 'bg-[#1ed661] text-black border-[#1ed661]'
+            : 'bg-black/55 text-white border-white/25 hover:border-[#1ed661]/45'
+        )}
+        aria-label={isPlaying ? '暂停预览' : '播放预览'}
+      >
+        {isPlaying ? <Pause size={13} /> : <PlayCircle size={13} />}
+      </button>
+      <span className="absolute left-1.5 bottom-1.5 px-1.5 py-0.5 rounded bg-black/65 text-[10px] font-bold text-white">{item.duration}</span>
+    </div>
+    <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <Badge label="AI播客" className="bg-cyan-500/15 text-cyan-300 border-cyan-400/35" />
+        {item.tags.slice(0, 1).map((tag) => (
+          <Badge key={tag} label={tag} className="bg-white/[0.02] text-gray-300 border-white/10" />
+        ))}
+      </div>
+      <h4 className="text-lg font-bold text-white line-clamp-2 mb-2">{item.title}</h4>
+      <p className="text-sm text-gray-400 line-clamp-2 mb-3">{item.summary}</p>
+      <div className="flex items-center justify-between text-xs text-gray-500 font-bold uppercase tracking-widest">
+        <span>{item.date}</span>
+        <span className="flex items-center gap-1"><Headphones size={12} /> {item.plays.toLocaleString()}</span>
       </div>
     </div>
   </button>
@@ -410,7 +885,11 @@ export default function App() {
   const [featuredSlideIndex, setFeaturedSlideIndex] = useState(0);
   const [glossaryOffset, setGlossaryOffset] = useState(0);
   const [recommendOffset, setRecommendOffset] = useState(0);
+  const [portalArticleQuickTag, setPortalArticleQuickTag] = useState('全部');
+  const [portalTutorialQuickTag, setPortalTutorialQuickTag] = useState('全部');
   const [contentTopicFilter, setContentTopicFilter] = useState('全部');
+  const [contentSourceFilter, setContentSourceFilter] = useState<SourceFilter>('all');
+  const [contentThemeFilter, setContentThemeFilter] = useState<ThemeFilter>('all');
   const [contentSort, setContentSort] = useState<ContentSort>('hot');
   const [contentDateRange, setContentDateRange] = useState<ContentDateRange>('all');
   const [bookmarks, setBookmarks] = useState<string[]>(() => {
@@ -422,11 +901,24 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
+  const [videoLikedIds, setVideoLikedIds] = useState<string[]>([]);
+  const [podcastLikedIds, setPodcastLikedIds] = useState<string[]>([]);
+  const [videoLikeCounts, setVideoLikeCounts] = useState<Record<string, number>>(() =>
+    Object.fromEntries(VIDEO_DATA.map((item) => [item.id, item.likes]))
+  );
+  const [podcastLikeCounts, setPodcastLikeCounts] = useState<Record<string, number>>(() =>
+    Object.fromEntries(PODCAST_DATA.map((item) => [item.id, item.likes]))
+  );
+  const [playingPodcastId, setPlayingPodcastId] = useState<string | null>(null);
   const [shareFeedback, setShareFeedback] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   const [commentDraft, setCommentDraft] = useState('');
   const [extraComments, setExtraComments] = useState<Record<string, CommentItem[]>>({});
   const articleRef = useRef<HTMLElement | null>(null);
+  const podcastPreviewRef = useRef<HTMLAudioElement | null>(null);
+  const podcastDetailAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [podcastDurationSec, setPodcastDurationSec] = useState(0);
+  const [podcastCurrentSec, setPodcastCurrentSec] = useState(0);
 
   const tutorialFeed = useMemo(() => buildTutorialFeed(NEWS_DATA), []);
   const termArticles = useMemo(() => buildTermArticles(GLOSSARY_DATA), []);
@@ -452,6 +944,37 @@ export default function App() {
     return [...GLOSSARY_DATA.slice(start), ...GLOSSARY_DATA.slice(0, start)];
   }, [glossaryOffset]);
 
+  const portalArticleQuickTags = useMemo(() => {
+    const tags = new Set<string>();
+    allNews
+      .filter((item) => item.type === 'article')
+      .forEach((item) => getNewsTopicTags(item).forEach((tag) => tags.add(tag)));
+    return ['全部', ...Array.from(tags).slice(0, 7)];
+  }, [allNews]);
+
+  const portalTutorialQuickTags = useMemo(() => {
+    const tags = new Set<string>();
+    tutorialFeed.forEach((item) => getNewsTopicTags(item).forEach((tag) => tags.add(tag)));
+    return ['全部', ...Array.from(tags).slice(0, 7)];
+  }, [tutorialFeed]);
+
+  const portalFilteredArticles = useMemo(() => {
+    const source = allNews.filter((item) => item.type === 'article');
+    const filtered =
+      portalArticleQuickTag === '全部'
+        ? source
+        : source.filter((item) => getNewsTopicTags(item).includes(portalArticleQuickTag));
+    return filtered.slice(0, 4);
+  }, [allNews, portalArticleQuickTag]);
+
+  const portalFilteredTutorials = useMemo(() => {
+    const filtered =
+      portalTutorialQuickTag === '全部'
+        ? tutorialFeed
+        : tutorialFeed.filter((item) => getNewsTopicTags(item).includes(portalTutorialQuickTag));
+    return filtered.slice(0, 4);
+  }, [tutorialFeed, portalTutorialQuickTag]);
+
   useEffect(() => {
     const handleHashChange = () => {
       setHash(window.location.hash || '#/');
@@ -466,7 +989,14 @@ export default function App() {
     if (!hash.startsWith('#/list')) return;
     const params = new URLSearchParams(hash.split('?')[1] || '');
     const tab = params.get('tab');
-    if (tab === 'flash' || tab === 'article' || tab === 'tutorial' || tab === 'knowledge') {
+    if (
+      tab === 'flash' ||
+      tab === 'article' ||
+      tab === 'tutorial' ||
+      tab === 'knowledge' ||
+      tab === 'video' ||
+      tab === 'podcast'
+    ) {
       setListTab(tab);
       return;
     }
@@ -475,6 +1005,8 @@ export default function App() {
 
   useEffect(() => {
     setContentTopicFilter('全部');
+    setContentSourceFilter('all');
+    setContentThemeFilter('all');
     setContentSort('hot');
     setContentDateRange('all');
     if (listTab === 'flash') {
@@ -486,7 +1018,15 @@ export default function App() {
     if (!hash.startsWith('#/search')) return;
     const params = new URLSearchParams(hash.split('?')[1] || '');
     const tab = params.get('tab');
-    if (tab === 'all' || tab === 'flash' || tab === 'article' || tab === 'tutorial' || tab === 'knowledge') {
+    if (
+      tab === 'all' ||
+      tab === 'flash' ||
+      tab === 'article' ||
+      tab === 'tutorial' ||
+      tab === 'knowledge' ||
+      tab === 'video' ||
+      tab === 'podcast'
+    ) {
       setSearchTab(tab);
       return;
     }
@@ -505,6 +1045,18 @@ export default function App() {
     }
     setFeaturedSlideIndex((prev) => (prev >= portalFeaturedArticles.length ? 0 : prev));
   }, [portalFeaturedArticles.length]);
+
+  useEffect(() => {
+    if (!portalArticleQuickTags.includes(portalArticleQuickTag)) {
+      setPortalArticleQuickTag('全部');
+    }
+  }, [portalArticleQuickTags, portalArticleQuickTag]);
+
+  useEffect(() => {
+    if (!portalTutorialQuickTags.includes(portalTutorialQuickTag)) {
+      setPortalTutorialQuickTag('全部');
+    }
+  }, [portalTutorialQuickTags, portalTutorialQuickTag]);
 
   useEffect(() => {
     localStorage.setItem('aistore_bookmarks', JSON.stringify(bookmarks));
@@ -551,17 +1103,39 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [shareFeedback]);
 
+  useEffect(() => {
+    const player = new Audio();
+    player.preload = 'none';
+    const handleEnded = () => setPlayingPodcastId(null);
+    player.addEventListener('ended', handleEnded);
+    podcastPreviewRef.current = player;
+    return () => {
+      player.pause();
+      player.removeEventListener('ended', handleEnded);
+      podcastPreviewRef.current = null;
+    };
+  }, []);
+
   const view = useMemo<View>(() => {
     if (hash === '#/' || hash === '#/home') return 'home';
     if (hash === '#/portal') return 'portal';
+    if (hash.startsWith('#/learning-path')) return 'learning_path';
     if (hash.startsWith('#/list')) return 'list';
     if (hash.startsWith('#/detail/')) return 'detail';
+    if (hash.startsWith('#/video/')) return 'video';
+    if (hash.startsWith('#/podcast/')) return 'podcast';
     if (hash.startsWith('#/term/')) return 'term';
     if (hash.startsWith('#/tool/')) return 'tool';
     if (hash.startsWith('#/section/')) return 'section';
     if (hash.startsWith('#/search')) return 'search';
     return 'home';
   }, [hash]);
+
+  useEffect(() => {
+    if (view === 'portal') return;
+    podcastPreviewRef.current?.pause();
+    setPlayingPodcastId(null);
+  }, [view]);
 
   const currentSlug = hash.startsWith('#/detail/') ? hash.split('#/detail/')[1]?.split('?')[0] : null;
   const currentNews = useMemo(() => allNews.find((item) => item.slug === currentSlug), [allNews, currentSlug]);
@@ -587,6 +1161,46 @@ export default function App() {
 
   const currentToolId = hash.startsWith('#/tool/') ? hash.slice(7).split('?')[0] : null;
   const currentTool = currentToolId ? TOOLS_DATA[currentToolId] : null;
+
+  const currentVideoSlug = hash.startsWith('#/video/') ? hash.split('#/video/')[1]?.split('?')[0] : null;
+  const currentVideo = useMemo(
+    () => VIDEO_DATA.find((item) => item.slug === currentVideoSlug || item.id === currentVideoSlug) || null,
+    [currentVideoSlug]
+  );
+  const currentVideoIndex = currentVideo ? VIDEO_DATA.findIndex((item) => item.id === currentVideo.id) : -1;
+  const previousVideo = currentVideoIndex > 0 ? VIDEO_DATA[currentVideoIndex - 1] : null;
+  const nextVideo = currentVideoIndex >= 0 && currentVideoIndex < VIDEO_DATA.length - 1 ? VIDEO_DATA[currentVideoIndex + 1] : null;
+  const relatedVideos = useMemo(
+    () => (currentVideo ? VIDEO_DATA.filter((item) => item.id !== currentVideo.id).slice(0, 3) : VIDEO_DATA.slice(0, 3)),
+    [currentVideo]
+  );
+
+  const currentPodcastSlug = hash.startsWith('#/podcast/') ? hash.split('#/podcast/')[1]?.split('?')[0] : null;
+  const currentPodcast = useMemo(
+    () => PODCAST_DATA.find((item) => item.slug === currentPodcastSlug || item.id === currentPodcastSlug) || null,
+    [currentPodcastSlug]
+  );
+  const currentPodcastIndex = currentPodcast ? PODCAST_DATA.findIndex((item) => item.id === currentPodcast.id) : -1;
+  const previousPodcast = currentPodcastIndex > 0 ? PODCAST_DATA[currentPodcastIndex - 1] : null;
+  const nextPodcast =
+    currentPodcastIndex >= 0 && currentPodcastIndex < PODCAST_DATA.length - 1
+      ? PODCAST_DATA[currentPodcastIndex + 1]
+      : null;
+  const relatedPodcasts = useMemo(
+    () =>
+      currentPodcast
+        ? PODCAST_DATA.filter((item) => item.id !== currentPodcast.id).slice(0, 3)
+        : PODCAST_DATA.slice(0, 3),
+    [currentPodcast]
+  );
+
+  useEffect(() => {
+    setPodcastCurrentSec(0);
+    setPodcastDurationSec(currentPodcast ? parseDurationLabelToSeconds(currentPodcast.duration) : 0);
+    if (podcastDetailAudioRef.current) {
+      podcastDetailAudioRef.current.currentTime = 0;
+    }
+  }, [currentPodcast?.id]);
 
   const currentSectionKey = hash.startsWith('#/section/') ? hash.split('#/section/')[1]?.split('?')[0] : null;
 
@@ -621,6 +1235,10 @@ export default function App() {
   const currentLikeCount = currentNews ? likeCounts[currentNews.id] ?? 0 : 0;
   const isCurrentNewsLiked = currentNews ? likedNewsIds.includes(currentNews.id) : false;
   const currentNewsModule = currentNews ? getNewsModuleLabel(currentNews) : '';
+  const currentVideoLikeCount = currentVideo ? videoLikeCounts[currentVideo.id] ?? currentVideo.likes : 0;
+  const isCurrentVideoLiked = currentVideo ? videoLikedIds.includes(currentVideo.id) : false;
+  const currentPodcastLikeCount = currentPodcast ? podcastLikeCounts[currentPodcast.id] ?? currentPodcast.likes : 0;
+  const isCurrentPodcastLiked = currentPodcast ? podcastLikedIds.includes(currentPodcast.id) : false;
 
   useEffect(() => {
     if (view !== 'detail' || !currentNews) {
@@ -700,6 +1318,30 @@ export default function App() {
     () => searchNewsResults.filter((item) => item.type === 'tutorial'),
     [searchNewsResults]
   );
+  const searchVideoResults = useMemo(
+    () =>
+      currentSearchQuery
+        ? VIDEO_DATA.filter(
+            (item) =>
+              item.title.toLowerCase().includes(currentSearchQuery.toLowerCase()) ||
+              item.summary.toLowerCase().includes(currentSearchQuery.toLowerCase()) ||
+              item.tags.join(' ').toLowerCase().includes(currentSearchQuery.toLowerCase())
+          )
+        : [],
+    [currentSearchQuery]
+  );
+  const searchPodcastResults = useMemo(
+    () =>
+      currentSearchQuery
+        ? PODCAST_DATA.filter(
+            (item) =>
+              item.title.toLowerCase().includes(currentSearchQuery.toLowerCase()) ||
+              item.summary.toLowerCase().includes(currentSearchQuery.toLowerCase()) ||
+              item.tags.join(' ').toLowerCase().includes(currentSearchQuery.toLowerCase())
+          )
+        : [],
+    [currentSearchQuery]
+  );
 
   const isWithinDateRange = (date: string): boolean => {
     if (contentDateRange === 'all') return true;
@@ -741,6 +1383,8 @@ export default function App() {
   const articleItems = useMemo(() => allNews.filter((item) => item.type === 'article'), [allNews]);
   const tutorialItems = useMemo(() => tutorialFeed, [tutorialFeed]);
   const knowledgeItems = useMemo(() => termArticles, [termArticles]);
+  const videoItems = useMemo(() => VIDEO_DATA, []);
+  const podcastItems = useMemo(() => PODCAST_DATA, []);
 
   const listTopicOptions = useMemo(() => {
     if (listTab === 'article') {
@@ -758,26 +1402,40 @@ export default function App() {
       knowledgeItems.forEach((item) => getTermTopicTags(item).forEach((tag) => tags.add(tag)));
       return ['全部', ...Array.from(tags).slice(0, 10)];
     }
+    if (listTab === 'video') {
+      const tags = new Set<string>();
+      videoItems.forEach((item) => getVideoTopicTags(item).forEach((tag) => tags.add(tag)));
+      return ['全部', ...Array.from(tags).slice(0, 10)];
+    }
+    if (listTab === 'podcast') {
+      const tags = new Set<string>();
+      podcastItems.forEach((item) => getPodcastTopicTags(item).forEach((tag) => tags.add(tag)));
+      return ['全部', ...Array.from(tags).slice(0, 10)];
+    }
     return ['全部'];
-  }, [articleItems, tutorialItems, knowledgeItems, listTab]);
+  }, [articleItems, tutorialItems, knowledgeItems, videoItems, podcastItems, listTab]);
 
   const filteredArticleItems = useMemo(() => {
     const filtered = articleItems.filter((item) => {
       const byTopic =
         contentTopicFilter === '全部' || getNewsTopicTags(item).includes(contentTopicFilter);
-      return byTopic && isWithinDateRange(item.date);
+      const bySource = contentSourceFilter === 'all' || getNewsSource(item) === contentSourceFilter;
+      const byTheme = contentThemeFilter === 'all' || getNewsTheme(item) === contentThemeFilter;
+      return byTopic && bySource && byTheme && isWithinDateRange(item.date);
     });
     return getSortedNews(filtered);
-  }, [articleItems, contentTopicFilter, contentDateRange, contentSort]);
+  }, [articleItems, contentTopicFilter, contentSourceFilter, contentThemeFilter, contentDateRange, contentSort]);
 
   const filteredTutorialItems = useMemo(() => {
     const filtered = tutorialItems.filter((item) => {
       const byTopic =
         contentTopicFilter === '全部' || getNewsTopicTags(item).includes(contentTopicFilter);
-      return byTopic && isWithinDateRange(item.date);
+      const bySource = contentSourceFilter === 'all' || getNewsSource(item) === contentSourceFilter;
+      const byTheme = contentThemeFilter === 'all' || getNewsTheme(item) === contentThemeFilter;
+      return byTopic && bySource && byTheme && isWithinDateRange(item.date);
     });
     return getSortedNews(filtered);
-  }, [tutorialItems, contentTopicFilter, contentDateRange, contentSort]);
+  }, [tutorialItems, contentTopicFilter, contentSourceFilter, contentThemeFilter, contentDateRange, contentSort]);
 
   const filteredKnowledgeItems = useMemo(() => {
     const filtered = knowledgeItems.filter((item) => {
@@ -787,6 +1445,44 @@ export default function App() {
     });
     return getSortedTerms(filtered);
   }, [knowledgeItems, contentTopicFilter, contentDateRange, contentSort]);
+
+  const filteredVideoItems = useMemo(() => {
+    const filtered = videoItems.filter((item) => {
+      const byTopic =
+        contentTopicFilter === '全部' || getVideoTopicTags(item).includes(contentTopicFilter);
+      const bySource = contentSourceFilter === 'all' || getVideoSource(item) === contentSourceFilter;
+      const byTheme = contentThemeFilter === 'all' || getVideoTheme(item) === contentThemeFilter;
+      return byTopic && bySource && byTheme && isWithinDateRange(item.date);
+    });
+    const sorted = [...filtered];
+    if (contentSort === 'latest') {
+      sorted.sort((a, b) => parseDateValue(b.date) - parseDateValue(a.date));
+    } else if (contentSort === 'most_read') {
+      sorted.sort((a, b) => b.views - a.views);
+    } else {
+      sorted.sort((a, b) => b.views + b.likes * 10 - (a.views + a.likes * 10));
+    }
+    return sorted;
+  }, [videoItems, contentTopicFilter, contentSourceFilter, contentThemeFilter, contentDateRange, contentSort]);
+
+  const filteredPodcastItems = useMemo(() => {
+    const filtered = podcastItems.filter((item) => {
+      const byTopic =
+        contentTopicFilter === '全部' || getPodcastTopicTags(item).includes(contentTopicFilter);
+      const bySource = contentSourceFilter === 'all' || getPodcastSource(item) === contentSourceFilter;
+      const byTheme = contentThemeFilter === 'all' || getPodcastTheme(item) === contentThemeFilter;
+      return byTopic && bySource && byTheme && isWithinDateRange(item.date);
+    });
+    const sorted = [...filtered];
+    if (contentSort === 'latest') {
+      sorted.sort((a, b) => parseDateValue(b.date) - parseDateValue(a.date));
+    } else if (contentSort === 'most_read') {
+      sorted.sort((a, b) => b.plays - a.plays);
+    } else {
+      sorted.sort((a, b) => b.plays + b.likes * 12 - (a.plays + a.likes * 12));
+    }
+    return sorted;
+  }, [podcastItems, contentTopicFilter, contentSourceFilter, contentThemeFilter, contentDateRange, contentSort]);
 
   const flashItems = useMemo(() => allNews.filter((item) => item.type === 'flash'), [allNews]);
   const flashCategoryOptions = useMemo(() => {
@@ -798,7 +1494,9 @@ export default function App() {
     const filtered = flashItems.filter((item) => {
       const byCategory =
         flashCategoryFilter === '全部快讯' || item.categoryTag === flashCategoryFilter;
-      return byCategory && isWithinDateRange(item.date);
+      const bySource = contentSourceFilter === 'all' || getNewsSource(item) === contentSourceFilter;
+      const byTheme = contentThemeFilter === 'all' || getNewsTheme(item) === contentThemeFilter;
+      return byCategory && bySource && byTheme && isWithinDateRange(item.date);
     });
 
     const sorted = [...filtered];
@@ -819,7 +1517,7 @@ export default function App() {
       return scoreB - scoreA;
     });
     return sorted;
-  }, [flashItems, flashCategoryFilter, contentDateRange, contentSort]);
+  }, [flashItems, flashCategoryFilter, contentSourceFilter, contentThemeFilter, contentDateRange, contentSort]);
 
   const hotSearchKeywords = useMemo(
     () => [
@@ -891,12 +1589,83 @@ export default function App() {
     }
   };
 
+  const handleShareVideo = async (video: VideoItem) => {
+    const link = `${window.location.origin}${window.location.pathname}#/video/${video.slug}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setShareFeedback('视频链接已复制');
+    } catch {
+      setShareFeedback('复制失败，请手动复制地址');
+    }
+  };
+
+  const handleSharePodcast = async (podcast: PodcastItem) => {
+    const link = `${window.location.origin}${window.location.pathname}#/podcast/${podcast.slug}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setShareFeedback('博客链接已复制');
+    } catch {
+      setShareFeedback('复制失败，请手动复制地址');
+    }
+  };
+
   const handleOpenSource = (news: NewsItem) => {
     if (!news.sourceUrl || news.sourceUrl === '#') {
       setShareFeedback('来源链接待补充');
       return;
     }
     window.open(news.sourceUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleOpenExternalSource = (sourceUrl: string) => {
+    if (!sourceUrl || sourceUrl === '#') {
+      setShareFeedback('来源链接待补充');
+      return;
+    }
+    window.open(sourceUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleToggleVideoLike = (videoId: string) => {
+    setVideoLikedIds((prev) => {
+      const liked = prev.includes(videoId);
+      setVideoLikeCounts((counts) => ({
+        ...counts,
+        [videoId]: Math.max(0, (counts[videoId] ?? 0) + (liked ? -1 : 1))
+      }));
+      return liked ? prev.filter((id) => id !== videoId) : [...prev, videoId];
+    });
+  };
+
+  const handleTogglePodcastLike = (podcastId: string) => {
+    setPodcastLikedIds((prev) => {
+      const liked = prev.includes(podcastId);
+      setPodcastLikeCounts((counts) => ({
+        ...counts,
+        [podcastId]: Math.max(0, (counts[podcastId] ?? 0) + (liked ? -1 : 1))
+      }));
+      return liked ? prev.filter((id) => id !== podcastId) : [...prev, podcastId];
+    });
+  };
+
+  const handleTogglePodcastPreview = async (podcast: PodcastItem) => {
+    const player = podcastPreviewRef.current;
+    if (!player) return;
+
+    if (playingPodcastId === podcast.id && !player.paused) {
+      player.pause();
+      setPlayingPodcastId(null);
+      return;
+    }
+
+    try {
+      if (player.src !== podcast.audioUrl) {
+        player.src = podcast.audioUrl;
+      }
+      await player.play();
+      setPlayingPodcastId(podcast.id);
+    } catch {
+      setShareFeedback('音频暂不可播放，请稍后重试');
+    }
   };
 
   const handleSubmitComment = () => {
@@ -935,7 +1704,7 @@ export default function App() {
           <div className="relative">
             <Badge label="AISTORE 首页" className="mb-5 bg-[#1ed661]/15 text-[#1ed661] border-[#1ed661]/30" />
             <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight mb-6">
-              保持专业节奏kkkk，
+              保持专业节奏hhhhh，
               <br />
               一站进入 <span className="text-[#1ed661]">AI 资讯体系</span>
             </h1>
@@ -1009,8 +1778,10 @@ export default function App() {
   const renderPortal = () => {
     const featured = portalFeaturedArticles[featuredSlideIndex] || portalFeaturedArticles[0];
     const flashes = portalFlashFeed;
-    const articles = allNews.filter((item) => item.type === 'article').slice(0, 4);
-    const tutorials = tutorialFeed.slice(0, 4);
+    const articles = portalFilteredArticles;
+    const tutorials = portalFilteredTutorials;
+    const videoPicks = VIDEO_DATA.slice(0, 4);
+    const podcastPicks = PODCAST_DATA.slice(0, 3);
     const tools = Object.values(TOOLS_DATA).slice(0, 4);
 
     const goPrevFeatured = (e: React.MouseEvent) => {
@@ -1132,6 +1903,131 @@ export default function App() {
           </div>
         </section>
 
+        <section className="space-y-7">
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <h3 className="text-2xl font-black flex items-center gap-3">
+              <Film className="text-pink-400" size={26} />
+              优质视频
+            </h3>
+            <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">Bilibili 风格信息流</span>
+          </div>
+          {videoPicks.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-5">
+              <button
+                onClick={() => (window.location.hash = `#/video/${videoPicks[0].slug}`)}
+                className="relative rounded-2xl overflow-hidden border border-white/10 group text-left"
+              >
+                <img
+                  src={videoPicks[0].cover}
+                  alt={videoPicks[0].title}
+                  className="w-full h-[280px] md:h-[340px] object-cover group-hover:scale-105 transition-transform duration-500"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/30 to-transparent" />
+                <div className="absolute left-5 right-5 bottom-5">
+                  <div className="flex items-center justify-between mb-3 text-xs text-gray-300">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/45 border border-white/15">
+                      <PlayCircle size={14} />
+                      {videoPicks[0].duration}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-gray-300/90">
+                      <Eye size={13} />
+                      {videoPicks[0].views.toLocaleString()}
+                    </span>
+                  </div>
+                  <h4 className="text-xl md:text-2xl font-black text-white leading-tight line-clamp-2 group-hover:text-[#9ef1bd] transition-colors">
+                    {videoPicks[0].title}
+                  </h4>
+                  <p className="text-sm text-gray-300/90 mt-2 line-clamp-2">{videoPicks[0].summary}</p>
+                </div>
+              </button>
+
+              <div className="space-y-3">
+                {videoPicks.slice(1).map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => (window.location.hash = `#/video/${item.slug}`)}
+                    className="w-full text-left rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors p-3 flex gap-3 group"
+                  >
+                    <div className="relative w-40 h-24 rounded-xl overflow-hidden border border-white/10 flex-shrink-0">
+                      <img src={item.cover} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" />
+                      <span className="absolute right-1.5 bottom-1.5 px-1.5 py-0.5 rounded bg-black/65 text-[10px] font-bold text-white">{item.duration}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-bold text-gray-100 line-clamp-2 group-hover:text-[#9ef1bd] transition-colors">{item.title}</h4>
+                      <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.summary}</p>
+                      <div className="mt-2 flex items-center justify-between text-[11px] text-gray-500">
+                        <span className="inline-flex items-center gap-1"><UserRound size={11} /> {item.author}</span>
+                        <span className="inline-flex items-center gap-1"><Eye size={11} /> {item.views.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-7">
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <h3 className="text-2xl font-black flex items-center gap-3">
+              <Headphones className="text-cyan-400" size={26} />
+              AI播客
+            </h3>
+            <a
+              href="https://caip.org.cn/aiCommunity/ai-podcast"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors"
+            >
+              参考播客布局
+            </a>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {podcastPicks.map((item) => (
+              <article
+                key={item.id}
+                onClick={() => (window.location.hash = `#/podcast/${item.slug}`)}
+                className="rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors p-4 flex gap-4 cursor-pointer"
+              >
+                <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-white/10 flex-shrink-0">
+                  <img src={item.cover} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleTogglePodcastPreview(item);
+                    }}
+                    className={cn(
+                      'absolute right-2 bottom-2 w-9 h-9 rounded-full border grid place-items-center transition-colors',
+                      playingPodcastId === item.id
+                        ? 'bg-[#1ed661] text-black border-[#1ed661]'
+                        : 'bg-black/55 text-white border-white/20 hover:border-[#1ed661]/45 hover:text-[#9ef1bd]'
+                    )}
+                    aria-label={playingPodcastId === item.id ? '暂停音频' : '播放音频'}
+                  >
+                    {playingPodcastId === item.id ? <Pause size={14} /> : <PlayCircle size={14} />}
+                  </button>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <Badge label="AI播客" className="bg-cyan-500/15 text-cyan-300 border-cyan-400/30" />
+                    <span className="text-[11px] text-gray-500">{item.duration}</span>
+                  </div>
+                  <h4 className="text-base font-bold text-gray-100 leading-snug line-clamp-2">{item.title}</h4>
+                  <p className="text-xs text-gray-400 line-clamp-2 mt-2">{item.summary}</p>
+                  <div className="mt-3 flex items-center justify-between text-[11px] text-gray-500">
+                    <span className="inline-flex items-center gap-1"><UserRound size={11} /> {item.host}</span>
+                    <span className="inline-flex items-center gap-1"><Headphones size={11} /> {item.plays.toLocaleString()}</span>
+                  </div>
+                  {playingPodcastId === item.id && (
+                    <p className="mt-2 text-[11px] font-semibold text-[#1ed661]">正在播放预览</p>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
         <section className="space-y-8">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
             <h3 className="text-2xl font-black flex items-center gap-3">
@@ -1140,26 +2036,49 @@ export default function App() {
             </h3>
             <a href="#/list?tab=article" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">查看全部</a>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {articles.map((item) => (
-              <Card key={item.id} className="h-full" onClick={() => (window.location.hash = `#/detail/${item.slug}`)}>
-                <div className="aspect-video overflow-hidden">
-                  <img src={item.cover} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
-                </div>
-                <div className="p-6 flex flex-col flex-1">
-                  <div className="mb-3">
-                    <Badge label={item.categoryTag} />
-                  </div>
-                  <h4 className="text-base md:text-lg font-bold text-white mb-3 group-hover:text-[#1ed661] transition-colors line-clamp-2">{item.title}</h4>
-                  <p className="text-sm text-gray-400 line-clamp-2 mb-4 flex-1">{item.summary}</p>
-                  <div className="flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                    <span>{item.date}</span>
-                    <span className="flex items-center gap-1"><Eye size={12} /> {item.readCount.toLocaleString()}</span>
-                  </div>
-                </div>
-              </Card>
+          <div className="flex flex-wrap items-center gap-2 -mt-1">
+            <span className="text-[11px] uppercase tracking-widest text-gray-500 font-bold mr-1">快捷标签</span>
+            {portalArticleQuickTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setPortalArticleQuickTag(tag)}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
+                  portalArticleQuickTag === tag
+                    ? 'bg-[#1ed661]/20 text-[#9ef1bd] border-[#1ed661]/45 shadow-[0_0_16px_rgba(30,214,97,0.18)]'
+                    : 'bg-white/[0.02] text-gray-400 border-white/10 hover:text-[#9ef1bd] hover:border-[#1ed661]/30'
+                )}
+              >
+                {tag}
+              </button>
             ))}
           </div>
+          {articles.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {articles.map((item) => (
+                <Card key={item.id} className="h-full" onClick={() => (window.location.hash = `#/detail/${item.slug}`)}>
+                  <div className="aspect-video overflow-hidden">
+                    <img src={item.cover} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
+                  </div>
+                  <div className="p-6 flex flex-col flex-1">
+                    <div className="mb-3">
+                      <Badge label={item.categoryTag} />
+                    </div>
+                    <h4 className="text-base md:text-lg font-bold text-white mb-3 group-hover:text-[#1ed661] transition-colors line-clamp-2">{item.title}</h4>
+                    <p className="text-sm text-gray-400 line-clamp-2 mb-4 flex-1">{item.summary}</p>
+                    <div className="flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                      <span>{item.date}</span>
+                      <span className="flex items-center gap-1"><Eye size={12} /> {item.readCount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] px-5 py-9 text-sm text-gray-500">
+              当前标签暂无内容，试试其他标签。
+            </div>
+          )}
         </section>
 
         <section className="space-y-8">
@@ -1170,24 +2089,103 @@ export default function App() {
             </h3>
             <a href="#/list?tab=tutorial" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">查看全部</a>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {tutorials.map((item) => (
-              <Card key={item.id} className="h-full" onClick={() => (window.location.hash = `#/detail/${item.slug}`)}>
-                <div className="aspect-video overflow-hidden">
-                  <img src={item.cover} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
-                </div>
-                <div className="p-6 flex flex-col flex-1">
-                  <div className="mb-3">
-                    <Badge label="教程" className="bg-blue-500/20 text-blue-300 border-blue-400/30" />
+          <div className="flex flex-wrap items-center gap-2 -mt-1">
+            <span className="text-[11px] uppercase tracking-widest text-gray-500 font-bold mr-1">快捷标签</span>
+            {portalTutorialQuickTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setPortalTutorialQuickTag(tag)}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
+                  portalTutorialQuickTag === tag
+                    ? 'bg-[#1ed661]/20 text-[#9ef1bd] border-[#1ed661]/45 shadow-[0_0_16px_rgba(30,214,97,0.18)]'
+                    : 'bg-white/[0.02] text-gray-400 border-white/10 hover:text-[#9ef1bd] hover:border-[#1ed661]/30'
+                )}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+          {tutorials.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {tutorials.map((item) => (
+                <Card key={item.id} className="h-full" onClick={() => (window.location.hash = `#/detail/${item.slug}`)}>
+                  <div className="aspect-video overflow-hidden">
+                    <img src={item.cover} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
                   </div>
-                  <h4 className="text-base md:text-lg font-bold text-white mb-3 group-hover:text-[#1ed661] transition-colors line-clamp-2">{item.title}</h4>
-                  <p className="text-sm text-gray-400 line-clamp-2 mb-4 flex-1">{item.summary}</p>
-                  <div className="flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                    <span>{item.date}</span>
-                    <span className="flex items-center gap-1"><Eye size={12} /> {item.readCount.toLocaleString()}</span>
+                  <div className="p-6 flex flex-col flex-1">
+                    <div className="mb-3 flex items-center gap-2 flex-wrap">
+                      <Badge label="教程" className="bg-blue-500/20 text-blue-300 border-blue-400/30" />
+                      {getTutorialLevel(item) && (
+                        <Badge label={getTutorialLevel(item) as string} className={getTutorialLevelBadgeClass(getTutorialLevel(item) as string)} />
+                      )}
+                    </div>
+                    <h4 className="text-base md:text-lg font-bold text-white mb-3 group-hover:text-[#1ed661] transition-colors line-clamp-2">{item.title}</h4>
+                    <p className="text-sm text-gray-400 line-clamp-2 mb-4 flex-1">{item.summary}</p>
+                    <div className="flex items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                      <span>{item.date}</span>
+                      <span className="flex items-center gap-1"><Eye size={12} /> {item.readCount.toLocaleString()}</span>
+                    </div>
                   </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.01] px-5 py-9 text-sm text-gray-500">
+              当前标签暂无教程，试试其他标签。
+            </div>
+          )}
+        </section>
+
+        <section className="space-y-7">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-white/5 pb-4">
+            <div className="flex items-center gap-3">
+              <Zap className="text-[#1ed661]" size={24} />
+              <h3 className="text-2xl font-black">7天学习路径</h3>
+            </div>
+            <a
+              href="https://openclaw101.dev/zh"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors"
+            >
+              参考路径布局
+            </a>
+          </div>
+          <p className="text-sm md:text-base text-gray-400">
+            结合资讯阅读、术语理解与教程实操，从 Day 1 到 Day 7 按阶段推进，每天都有明确目标、关键动作与交付结果。
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {LEARNING_PATH_7D.map((day) => (
+              <article
+                key={day.id}
+                className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-[#111923]/95 via-[#0f1620]/95 to-[#0d1117]/95 p-5 hover:border-[#1ed661]/35 hover:shadow-[0_0_24px_rgba(30,214,97,0.08)] transition-all"
+              >
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <span className="text-[10px] px-2 py-1 rounded-full border border-[#1ed661]/30 bg-[#1ed661]/10 text-[#9ef1bd] font-black tracking-widest">
+                    {day.dayLabel}
+                  </span>
+                  <Badge label={day.trackTag} className="bg-white/[0.02] border-white/15 text-gray-300" />
                 </div>
-              </Card>
+                <h4 className="text-base font-black text-white leading-snug mb-2 min-h-[44px]">{day.title}</h4>
+                <p className="text-sm text-gray-400 leading-6 mb-3 line-clamp-3">{day.summary}</p>
+                <ul className="space-y-1.5 mb-4">
+                  {day.highlights.map((point) => (
+                    <li key={point} className="text-xs text-gray-300 flex items-start gap-2">
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#1ed661] shrink-0" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-[11px] text-gray-500 mb-4 line-clamp-2">交付成果：{day.deliverable}</p>
+                <a
+                  href={day.targetHash}
+                  className="inline-flex items-center gap-1 text-xs text-[#9ef1bd] hover:text-[#1ed661] transition-colors font-semibold"
+                >
+                  查看相关内容
+                  <ArrowRight size={12} />
+                </a>
+              </article>
             ))}
           </div>
         </section>
@@ -1260,12 +2258,18 @@ export default function App() {
                 }}
                 className={cn(
                   'flex items-center gap-1 text-sm font-medium transition-colors',
-                  view === 'portal' || view === 'list' || view === 'detail' || view === 'term'
+                  view === 'portal' ||
+                    view === 'learning_path' ||
+                    view === 'list' ||
+                    view === 'detail' ||
+                    view === 'term' ||
+                    view === 'video' ||
+                    view === 'podcast'
                     ? 'text-[#1ed661]'
                     : 'text-gray-400 hover:text-[#1ed661]'
                 )}
               >
-                资讯
+                AI百科
                 <ChevronDown size={14} className={cn('transition-transform', isNewsMenuOpen ? 'rotate-180' : 'rotate-0')} />
               </button>
               <div className="absolute left-0 right-0 top-full h-3" />
@@ -1275,10 +2279,12 @@ export default function App() {
                   isNewsMenuOpen ? 'opacity-100 pointer-events-auto translate-y-0' : 'opacity-0 pointer-events-none -translate-y-1'
                 )}
               >
-                <button onClick={() => goToListTab('flash')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">快讯</button>
-                <button onClick={() => goToListTab('article')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">深度文章</button>
-                <button onClick={() => goToListTab('tutorial')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">教程</button>
+                <button onClick={() => goToListTab('flash')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">AI快讯</button>
+                <button onClick={() => goToListTab('article')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">深度好文</button>
+                <button onClick={() => goToListTab('tutorial')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">精选教程</button>
                 <button onClick={() => goToListTab('knowledge')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">术语百科</button>
+                <button onClick={() => goToListTab('video')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">优质视频</button>
+                <button onClick={() => goToListTab('podcast')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">AI播客</button>
               </div>
             </div>
 
@@ -1308,17 +2314,19 @@ export default function App() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="mb-8 text-center">
                 <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">资讯列表</h1>
-                <p className="text-base text-gray-400 max-w-4xl mx-auto">从资讯聚合页进入，按分类浏览并搜索快讯、深度文章、教程和术语百科。</p>
+                <p className="text-base text-gray-400 max-w-4xl mx-auto">从聚合页进入，按分类浏览 AI快讯、深度好文、精选教程、术语百科、优质视频和 AI播客。</p>
               </div>
 
               <div className="sticky top-24 z-40 mb-8 border-b border-white/10 pb-4 backdrop-blur-md bg-[#0d1117]/85">
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-6 overflow-x-auto no-scrollbar">
                     {[
-                      { id: 'flash', label: '快讯' },
-                      { id: 'article', label: '深度文章' },
-                      { id: 'tutorial', label: '教程' },
-                      { id: 'knowledge', label: '百科' }
+                      { id: 'flash', label: 'AI快讯' },
+                      { id: 'article', label: '深度好文' },
+                      { id: 'tutorial', label: '精选教程' },
+                      { id: 'knowledge', label: '术语百科' },
+                      { id: 'video', label: '优质视频' },
+                      { id: 'podcast', label: 'AI播客' }
                     ].map((tab) => (
                       <button
                         key={tab.id}
@@ -1369,6 +2377,44 @@ export default function App() {
                           <option value="3d">近3天</option>
                           <option value="7d">近7天</option>
                           <option value="30d">近30天</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500 font-semibold">来源</span>
+                        <select
+                          value={contentSourceFilter}
+                          onChange={(e) => setContentSourceFilter(e.target.value as SourceFilter)}
+                          disabled={listTab === 'knowledge'}
+                          className={cn(
+                            'h-10 rounded-xl bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors',
+                            listTab === 'knowledge' && 'opacity-45 cursor-not-allowed'
+                          )}
+                        >
+                          {SOURCE_FILTER_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500 font-semibold">主题</span>
+                        <select
+                          value={contentThemeFilter}
+                          onChange={(e) => setContentThemeFilter(e.target.value as ThemeFilter)}
+                          disabled={listTab === 'knowledge'}
+                          className={cn(
+                            'h-10 rounded-xl bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors',
+                            listTab === 'knowledge' && 'opacity-45 cursor-not-allowed'
+                          )}
+                        >
+                          {THEME_FILTER_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -1455,7 +2501,15 @@ export default function App() {
                       <form onSubmit={handleSearch} className="relative">
                         <input
                           type="text"
-                          placeholder={listTab === 'flash' ? '搜索关键词...' : '搜索文章...'}
+                          placeholder={
+                            listTab === 'flash'
+                              ? '搜索快讯...'
+                              : listTab === 'video'
+                                ? '搜索视频...'
+                                : listTab === 'podcast'
+                                  ? '搜索播客...'
+                                  : '搜索文章...'
+                          }
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
                           className="h-11 w-[300px] bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 rounded-xl pl-10 pr-10 text-sm text-gray-100 focus:outline-none focus:border-[#1ed661]/50 transition-colors"
@@ -1588,6 +2642,108 @@ export default function App() {
                       <p className="text-sm text-gray-500 py-12">当前筛选条件下暂无术语内容。</p>
                     )
                   )}
+
+                  {listTab === 'video' && (
+                    filteredVideoItems.length > 0 ? (
+                      contentLayoutMode === 'list' ? (
+                        <div className="space-y-4">
+                          {filteredVideoItems.map((item) => (
+                            <VideoHorizontalCard key={item.id} item={item} onClick={() => (window.location.hash = `#/video/${item.slug}`)} />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          {filteredVideoItems.map((item) => (
+                            <Card key={item.id} className="h-full overflow-hidden" onClick={() => (window.location.hash = `#/video/${item.slug}`)}>
+                              <div className="aspect-video overflow-hidden relative">
+                                <img src={item.cover} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
+                                <span className="absolute right-2 bottom-2 px-2 py-1 rounded bg-black/65 text-[11px] font-bold text-white">{item.duration}</span>
+                              </div>
+                              <div className="p-5 space-y-3">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <Badge label="优质视频" className="bg-pink-500/15 text-pink-300 border-pink-400/35" />
+                                  {item.tags.slice(0, 2).map((tag) => (
+                                    <Badge key={tag} label={tag} className="bg-white/[0.02] text-gray-300 border-white/10" />
+                                  ))}
+                                </div>
+                                <h4 className="text-base md:text-lg font-bold text-white line-clamp-2">{item.title}</h4>
+                                <p className="text-sm text-gray-400 line-clamp-2">{item.summary}</p>
+                                <div className="flex items-center justify-between text-[11px] text-gray-500 font-bold uppercase tracking-widest">
+                                  <span>{item.date}</span>
+                                  <span className="flex items-center gap-1"><Eye size={12} /> {item.views.toLocaleString()}</span>
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      )
+                    ) : (
+                      <p className="text-sm text-gray-500 py-12">当前筛选条件下暂无优质视频。</p>
+                    )
+                  )}
+
+                  {listTab === 'podcast' && (
+                    filteredPodcastItems.length > 0 ? (
+                      contentLayoutMode === 'list' ? (
+                        <div className="space-y-4">
+                          {filteredPodcastItems.map((item) => (
+                            <PodcastHorizontalCard
+                              key={item.id}
+                              item={item}
+                              isPlaying={playingPodcastId === item.id}
+                              onPreview={(e) => {
+                                e.stopPropagation();
+                                void handleTogglePodcastPreview(item);
+                              }}
+                              onClick={() => (window.location.hash = `#/podcast/${item.slug}`)}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          {filteredPodcastItems.map((item) => (
+                            <Card key={item.id} className="h-full p-5" onClick={() => (window.location.hash = `#/podcast/${item.slug}`)}>
+                              <div className="flex gap-4">
+                                <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-white/10 shrink-0">
+                                  <img src={item.cover} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      void handleTogglePodcastPreview(item);
+                                    }}
+                                    className={cn(
+                                      'absolute right-2 bottom-2 w-8 h-8 rounded-full border grid place-items-center transition-colors',
+                                      playingPodcastId === item.id
+                                        ? 'bg-[#1ed661] text-black border-[#1ed661]'
+                                        : 'bg-black/55 text-white border-white/25 hover:border-[#1ed661]/45'
+                                    )}
+                                  >
+                                    {playingPodcastId === item.id ? <Pause size={13} /> : <PlayCircle size={13} />}
+                                  </button>
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="mb-2 flex items-center gap-2 flex-wrap">
+                                    <Badge label="AI播客" className="bg-cyan-500/15 text-cyan-300 border-cyan-400/35" />
+                                    {item.tags.slice(0, 1).map((tag) => (
+                                      <Badge key={tag} label={tag} className="bg-white/[0.02] text-gray-300 border-white/10" />
+                                    ))}
+                                  </div>
+                                  <h4 className="text-base md:text-lg font-bold text-white line-clamp-2">{item.title}</h4>
+                                  <p className="text-sm text-gray-400 line-clamp-2 mt-2">{item.summary}</p>
+                                  <div className="mt-3 flex items-center justify-between text-[11px] text-gray-500 font-bold uppercase tracking-widest">
+                                    <span>{item.date}</span>
+                                    <span className="flex items-center gap-1"><Headphones size={12} /> {item.plays.toLocaleString()}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      )
+                    ) : (
+                      <p className="text-sm text-gray-500 py-12">当前筛选条件下暂无 AI播客。</p>
+                    )
+                  )}
                 </div>
 
                 <aside className="xl:sticky xl:top-32">
@@ -1640,16 +2796,19 @@ export default function App() {
                 <div className="flex items-center justify-between">
                   <button onClick={() => (window.location.hash = '#/portal')} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm text-gray-300 hover:text-white hover:border-[#1ed661]/40 transition-colors">
                     <ArrowLeft size={16} />
-                    返回资讯
+                    返回AI百科
                   </button>
                   <div className="flex items-center gap-3">
                     <Badge label={currentNews.categoryTag} />
+                    {currentNews.type === 'tutorial' && getTutorialLevel(currentNews) && (
+                      <Badge label={getTutorialLevel(currentNews) as string} className={getTutorialLevelBadgeClass(getTutorialLevel(currentNews) as string)} />
+                    )}
                     <span className="text-xs text-gray-500 flex items-center gap-1"><Clock size={12} /> {currentNews.date}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500 overflow-x-auto whitespace-nowrap">
                   <Home size={14} className="text-gray-500 flex-shrink-0" />
-                  <span>资讯</span>
+                  <span>AI百科</span>
                   <span className="text-gray-600">›</span>
                   <span>{currentNewsModule}</span>
                   <span className="text-gray-600">›</span>
@@ -1664,7 +2823,7 @@ export default function App() {
                 <div className="flex items-center justify-end pt-5 border-t border-white/5 gap-6 flex-wrap">
                   <div className="flex items-center gap-6 text-xs text-gray-600 font-bold uppercase tracking-widest">
                     <span className="flex items-center gap-1.5"><Eye size={14} /> {currentNews.readCount.toLocaleString()}</span>
-                    <span>{currentNews.estimatedTime || '8 MIN'}</span>
+                    <span>预计阅读时间{currentNews.estimatedTime?.replace(/\s*min/i, '分钟').replace(/\s*MIN/i, '分钟') || '8分钟'}</span>
                   </div>
                 </div>
               </div>
@@ -1892,6 +3051,297 @@ export default function App() {
                 </div>
               </section>
             </motion.div>
+          ) : view === 'video' && currentVideo ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-5xl mx-auto py-8 space-y-8">
+              <div className="flex items-center justify-between">
+                <button onClick={() => goToListTab('video')} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm text-gray-300 hover:text-white hover:border-[#1ed661]/40 transition-colors">
+                  <ArrowLeft size={16} />
+                  返回优质视频
+                </button>
+                <Badge label="优质视频" className="bg-pink-500/15 text-pink-300 border-pink-400/35" />
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-gray-500 overflow-x-auto whitespace-nowrap">
+                <Home size={14} className="text-gray-500 flex-shrink-0" />
+                <span>AI百科</span>
+                <span className="text-gray-600">›</span>
+                <span>优质视频</span>
+                <span className="text-gray-600">›</span>
+                <span className="text-gray-400">{currentVideo.title}</span>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#111923] via-[#0d1117] to-[#0b1510] p-8 md:p-10">
+                <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-white mb-5 leading-[1.3] tracking-tight">{currentVideo.title}</h1>
+                <div className="flex flex-wrap items-center gap-2 mb-5">
+                  {currentVideo.tags.map((tag) => (
+                    <Badge key={tag} label={tag} className="bg-white/[0.02] text-gray-300 border-white/10" />
+                  ))}
+                </div>
+                <div className="text-xs text-gray-500 font-bold uppercase tracking-widest flex items-center gap-5">
+                  <span className="inline-flex items-center gap-1.5"><CalendarDays size={13} /> {currentVideo.date}</span>
+                  <span className="inline-flex items-center gap-1.5"><Eye size={13} /> {currentVideo.views.toLocaleString()}</span>
+                  <span className="inline-flex items-center gap-1.5"><PlayCircle size={13} /> {currentVideo.duration}</span>
+                </div>
+              </div>
+
+              <section className="rounded-3xl border border-white/10 bg-black/30 p-3 md:p-4">
+                <video
+                  controls
+                  autoPlay
+                  poster={currentVideo.cover}
+                  className="w-full rounded-2xl border border-white/10 bg-black"
+                >
+                  <source src={currentVideo.videoUrl} type="video/mp4" />
+                </video>
+                <p className="text-sm text-gray-400 mt-4 leading-7">{currentVideo.summary}</p>
+              </section>
+
+              <section className="py-2 border-y border-white/10">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <button onClick={() => handleOpenExternalSource(currentVideo.sourceUrl)} className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#1ed661] transition-colors">
+                    来源: <span className="font-bold">{currentVideo.sourceName}</span>
+                    <ExternalLink size={14} />
+                  </button>
+                  <div className="flex items-center flex-wrap gap-3">
+                    <button
+                      onClick={() => toggleBookmark(currentVideo.id)}
+                      className={cn(
+                        'inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-bold transition-all',
+                        bookmarks.includes(currentVideo.id)
+                          ? 'bg-[#1ed661] text-black border-[#1ed661]'
+                          : 'border-white/10 text-gray-300 hover:border-[#1ed661]/40 hover:text-white'
+                      )}
+                    >
+                      <Star size={15} fill={bookmarks.includes(currentVideo.id) ? 'currentColor' : 'none'} />
+                      {bookmarks.includes(currentVideo.id) ? '已收藏' : '收藏'}
+                    </button>
+                    <button
+                      onClick={() => handleShareVideo(currentVideo)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm font-bold text-gray-300 hover:border-[#1ed661]/40 hover:text-white transition-colors"
+                    >
+                      <Share2 size={15} />
+                      分享
+                    </button>
+                    <button
+                      onClick={() => handleToggleVideoLike(currentVideo.id)}
+                      className={cn(
+                        'inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-bold transition-all',
+                        isCurrentVideoLiked
+                          ? 'bg-pink-500/15 border-pink-400/50 text-pink-300'
+                          : 'border-white/10 text-gray-300 hover:border-pink-400/40 hover:text-pink-200'
+                      )}
+                    >
+                      <Heart size={15} fill={isCurrentVideoLiked ? 'currentColor' : 'none'} />
+                      点赞 {currentVideoLikeCount}
+                    </button>
+                  </div>
+                </div>
+                {shareFeedback && <p className="mt-3 text-xs text-[#1ed661]">{shareFeedback}</p>}
+              </section>
+
+              <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  disabled={!previousVideo}
+                  onClick={() => previousVideo && (window.location.hash = `#/video/${previousVideo.slug}`)}
+                  className="text-left p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                    <ArrowLeft size={13} />
+                    上一条
+                  </div>
+                  <div className="font-bold text-gray-200 line-clamp-2">{previousVideo?.title || '已经是第一条'}</div>
+                </button>
+                <button
+                  disabled={!nextVideo}
+                  onClick={() => nextVideo && (window.location.hash = `#/video/${nextVideo.slug}`)}
+                  className="text-left p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <div className="text-xs text-gray-500 mb-2 flex items-center justify-end gap-1">
+                    下一条
+                    <ArrowRight size={13} />
+                  </div>
+                  <div className="font-bold text-gray-200 text-right line-clamp-2">{nextVideo?.title || '已经是最后一条'}</div>
+                </button>
+              </section>
+
+              <section className="space-y-4">
+                <h3 className="text-2xl font-black">相关推荐</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {relatedVideos.map((item) => (
+                    <button key={item.id} onClick={() => (window.location.hash = `#/video/${item.slug}`)} className="text-left rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors overflow-hidden">
+                      <div className="aspect-video overflow-hidden">
+                        <img src={item.cover} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                      <div className="p-4">
+                        <h4 className="font-bold text-gray-100 line-clamp-2">{item.title}</h4>
+                        <p className="text-xs text-gray-500 mt-2">{item.date}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </motion.div>
+          ) : view === 'podcast' && currentPodcast ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-5xl mx-auto py-8 space-y-8">
+              <div className="flex items-center justify-between">
+                <button onClick={() => goToListTab('podcast')} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm text-gray-300 hover:text-white hover:border-[#1ed661]/40 transition-colors">
+                  <ArrowLeft size={16} />
+                  返回AI播客
+                </button>
+                <Badge label="AI播客" className="bg-cyan-500/15 text-cyan-300 border-cyan-400/35" />
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-gray-500 overflow-x-auto whitespace-nowrap">
+                <Home size={14} className="text-gray-500 flex-shrink-0" />
+                <span>AI百科</span>
+                <span className="text-gray-600">›</span>
+                <span>AI播客</span>
+                <span className="text-gray-600">›</span>
+                <span className="text-gray-400">{currentPodcast.title}</span>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#111923] via-[#0d1117] to-[#0b1510] p-8 md:p-10">
+                <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-white mb-5 leading-[1.3] tracking-tight">{currentPodcast.title}</h1>
+                <div className="flex flex-wrap items-center gap-2 mb-5">
+                  {currentPodcast.tags.map((tag) => (
+                    <Badge key={tag} label={tag} className="bg-white/[0.02] text-gray-300 border-white/10" />
+                  ))}
+                </div>
+                <div className="text-xs text-gray-500 font-bold uppercase tracking-widest flex items-center gap-5">
+                  <span className="inline-flex items-center gap-1.5"><CalendarDays size={13} /> {currentPodcast.date}</span>
+                  <span className="inline-flex items-center gap-1.5"><Headphones size={13} /> {currentPodcast.plays.toLocaleString()}</span>
+                  <span className="inline-flex items-center gap-1.5"><Clock size={13} /> {currentPodcast.duration}</span>
+                </div>
+              </div>
+
+              <section className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 md:p-8 space-y-5">
+                <audio
+                  ref={podcastDetailAudioRef}
+                  controls
+                  className="w-full"
+                  src={currentPodcast.audioUrl}
+                  onLoadedMetadata={(e) => {
+                    const media = e.currentTarget;
+                    setPodcastDurationSec(Number.isFinite(media.duration) ? media.duration : 0);
+                  }}
+                  onTimeUpdate={(e) => setPodcastCurrentSec(e.currentTarget.currentTime)}
+                />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-gray-500 font-semibold">
+                    <span>播放进度</span>
+                    <span>{formatAudioTime(podcastCurrentSec)} / {formatAudioTime(podcastDurationSec)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={Math.max(podcastDurationSec, 0)}
+                    value={Math.min(podcastCurrentSec, Math.max(podcastDurationSec, 0))}
+                    step={1}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      setPodcastCurrentSec(value);
+                      if (podcastDetailAudioRef.current) {
+                        podcastDetailAudioRef.current.currentTime = value;
+                      }
+                    }}
+                    className="w-full accent-[#1ed661]"
+                  />
+                </div>
+                <div className="space-y-5 pt-2">
+                  {currentPodcast.transcript.map((paragraph) => (
+                    <p key={paragraph} className="text-[15px] md:text-base text-gray-300 leading-8">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </section>
+
+              <section className="max-w-4xl">
+                <p className="text-xs text-gray-600/90 leading-6">
+                  免责声明：本文仅供信息参考，不构成任何投资、法律或商业建议；如有侵权，请联系删除。
+                </p>
+              </section>
+
+              <section className="py-2 border-y border-white/10">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <button onClick={() => handleOpenExternalSource(currentPodcast.sourceUrl)} className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#1ed661] transition-colors">
+                    来源: <span className="font-bold">{currentPodcast.sourceName}</span>
+                    <ExternalLink size={14} />
+                  </button>
+                  <div className="flex items-center flex-wrap gap-3">
+                    <button
+                      onClick={() => toggleBookmark(currentPodcast.id)}
+                      className={cn(
+                        'inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-bold transition-all',
+                        bookmarks.includes(currentPodcast.id)
+                          ? 'bg-[#1ed661] text-black border-[#1ed661]'
+                          : 'border-white/10 text-gray-300 hover:border-[#1ed661]/40 hover:text-white'
+                      )}
+                    >
+                      <Star size={15} fill={bookmarks.includes(currentPodcast.id) ? 'currentColor' : 'none'} />
+                      {bookmarks.includes(currentPodcast.id) ? '已收藏' : '收藏'}
+                    </button>
+                    <button
+                      onClick={() => handleSharePodcast(currentPodcast)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm font-bold text-gray-300 hover:border-[#1ed661]/40 hover:text-white transition-colors"
+                    >
+                      <Share2 size={15} />
+                      分享
+                    </button>
+                    <button
+                      onClick={() => handleTogglePodcastLike(currentPodcast.id)}
+                      className={cn(
+                        'inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-bold transition-all',
+                        isCurrentPodcastLiked
+                          ? 'bg-pink-500/15 border-pink-400/50 text-pink-300'
+                          : 'border-white/10 text-gray-300 hover:border-pink-400/40 hover:text-pink-200'
+                      )}
+                    >
+                      <Heart size={15} fill={isCurrentPodcastLiked ? 'currentColor' : 'none'} />
+                      点赞 {currentPodcastLikeCount}
+                    </button>
+                  </div>
+                </div>
+                {shareFeedback && <p className="mt-3 text-xs text-[#1ed661]">{shareFeedback}</p>}
+              </section>
+
+              <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  disabled={!previousPodcast}
+                  onClick={() => previousPodcast && (window.location.hash = `#/podcast/${previousPodcast.slug}`)}
+                  className="text-left p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                    <ArrowLeft size={13} />
+                    上一期
+                  </div>
+                  <div className="font-bold text-gray-200 line-clamp-2">{previousPodcast?.title || '已经是第一期'}</div>
+                </button>
+                <button
+                  disabled={!nextPodcast}
+                  onClick={() => nextPodcast && (window.location.hash = `#/podcast/${nextPodcast.slug}`)}
+                  className="text-left p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <div className="text-xs text-gray-500 mb-2 flex items-center justify-end gap-1">
+                    下一期
+                    <ArrowRight size={13} />
+                  </div>
+                  <div className="font-bold text-gray-200 text-right line-clamp-2">{nextPodcast?.title || '已经是最后一期'}</div>
+                </button>
+              </section>
+
+              <section className="space-y-4">
+                <h3 className="text-2xl font-black">相关播客</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {relatedPodcasts.map((item) => (
+                    <button key={item.id} onClick={() => (window.location.hash = `#/podcast/${item.slug}`)} className="text-left p-4 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors">
+                      <h4 className="font-bold text-gray-100 line-clamp-2">{item.title}</h4>
+                      <p className="text-xs text-gray-500 mt-2">{item.date} · {item.duration}</p>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </motion.div>
           ) : view === 'term' && currentTerm ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-4xl mx-auto py-8 space-y-8">
               <div className="flex items-center justify-between">
@@ -2003,11 +3453,13 @@ export default function App() {
 
               <div className="flex items-center gap-3 flex-wrap">
                 {[
-                  { id: 'all', label: '全部', count: searchNewsResults.length + searchTermResults.length },
-                  { id: 'flash', label: '快讯', count: searchFlashResults.length },
-                  { id: 'article', label: '深度文章', count: searchArticleResults.length },
-                  { id: 'tutorial', label: '教程', count: searchTutorialResults.length },
-                  { id: 'knowledge', label: '术语百科', count: searchTermResults.length }
+                  { id: 'all', label: '全部', count: searchNewsResults.length + searchTermResults.length + searchVideoResults.length + searchPodcastResults.length },
+                  { id: 'flash', label: 'AI快讯', count: searchFlashResults.length },
+                  { id: 'article', label: '深度好文', count: searchArticleResults.length },
+                  { id: 'tutorial', label: '精选教程', count: searchTutorialResults.length },
+                  { id: 'knowledge', label: '术语百科', count: searchTermResults.length },
+                  { id: 'video', label: '优质视频', count: searchVideoResults.length },
+                  { id: 'podcast', label: 'AI播客', count: searchPodcastResults.length }
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -2095,6 +3547,49 @@ export default function App() {
                       <p className="text-sm text-gray-500">暂无匹配的术语词条。</p>
                     )}
                   </section>
+
+                  <section className="space-y-4">
+                    <h2 className="text-2xl font-black">优质视频 ({searchVideoResults.length})</h2>
+                    {searchVideoResults.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {searchVideoResults.map((item) => (
+                          <Card key={item.id} className="h-full overflow-hidden" onClick={() => (window.location.hash = `#/video/${item.slug}`)}>
+                            <div className="aspect-video overflow-hidden">
+                              <img src={item.cover} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
+                            </div>
+                            <div className="p-5 space-y-3">
+                              <div className="flex items-center gap-2">
+                                <Badge label="优质视频" className="bg-pink-500/15 text-pink-300 border-pink-400/35" />
+                              </div>
+                              <h3 className="text-base md:text-lg font-bold line-clamp-2">{item.title}</h3>
+                              <p className="text-sm text-gray-400 line-clamp-2">{item.summary}</p>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">暂无匹配的优质视频。</p>
+                    )}
+                  </section>
+
+                  <section className="space-y-4">
+                    <h2 className="text-2xl font-black">AI播客 ({searchPodcastResults.length})</h2>
+                    {searchPodcastResults.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {searchPodcastResults.map((item) => (
+                          <Card key={item.id} className="h-full p-5" onClick={() => (window.location.hash = `#/podcast/${item.slug}`)}>
+                            <div className="mb-3 flex items-center gap-2">
+                              <Badge label="AI播客" className="bg-cyan-500/15 text-cyan-300 border-cyan-400/35" />
+                            </div>
+                            <h3 className="text-base md:text-lg font-bold line-clamp-2">{item.title}</h3>
+                            <p className="text-sm text-gray-400 line-clamp-3 mt-2">{item.summary}</p>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">暂无匹配的 AI播客。</p>
+                    )}
+                  </section>
                 </div>
               )}
 
@@ -2169,6 +3664,53 @@ export default function App() {
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500">暂无匹配的术语词条。</p>
+                  )}
+                </section>
+              )}
+
+              {searchTab === 'video' && (
+                <section className="space-y-4">
+                  <h2 className="text-2xl font-black">优质视频 ({searchVideoResults.length})</h2>
+                  {searchVideoResults.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {searchVideoResults.map((item) => (
+                        <Card key={item.id} className="h-full overflow-hidden" onClick={() => (window.location.hash = `#/video/${item.slug}`)}>
+                          <div className="aspect-video overflow-hidden">
+                            <img src={item.cover} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
+                          </div>
+                          <div className="p-5 space-y-3">
+                            <div className="flex items-center gap-2">
+                              <Badge label="优质视频" className="bg-pink-500/15 text-pink-300 border-pink-400/35" />
+                            </div>
+                            <h3 className="text-base md:text-lg font-bold line-clamp-2">{item.title}</h3>
+                            <p className="text-sm text-gray-400 line-clamp-2">{item.summary}</p>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">暂无匹配的优质视频。</p>
+                  )}
+                </section>
+              )}
+
+              {searchTab === 'podcast' && (
+                <section className="space-y-4">
+                  <h2 className="text-2xl font-black">AI播客 ({searchPodcastResults.length})</h2>
+                  {searchPodcastResults.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {searchPodcastResults.map((item) => (
+                        <Card key={item.id} className="h-full p-5" onClick={() => (window.location.hash = `#/podcast/${item.slug}`)}>
+                          <div className="mb-3 flex items-center gap-2">
+                            <Badge label="AI播客" className="bg-cyan-500/15 text-cyan-300 border-cyan-400/35" />
+                          </div>
+                          <h3 className="text-base md:text-lg font-bold line-clamp-2">{item.title}</h3>
+                          <p className="text-sm text-gray-400 line-clamp-3 mt-2">{item.summary}</p>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">暂无匹配的 AI播客。</p>
                   )}
                 </section>
               )}

@@ -39,33 +39,53 @@ export const TimelineItem: React.FC<{ item: NewsItem; showDate: boolean; onClick
 );
 
 export const ArticleCard: React.FC<{ item: NewsItem; onClick: () => void; compact?: boolean; className?: string }> = ({ item, onClick, compact = false, className = '' }) => (
-  <Card className={cn("group cursor-pointer flex flex-col h-full overflow-hidden relative", className)} onClick={onClick}>
-    <div className="aspect-video overflow-hidden">
-      <img
-        src={item.cover}
-        alt={item.title}
-        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-        referrerPolicy="no-referrer"
-      />
-    </div>
-    <div className={cn("flex flex-col flex-grow", compact ? "p-4" : "p-6")}>
-      <div className="mb-3 flex items-center gap-2 flex-wrap">
-        <Badge label={item.categoryTag} />
-        {item.isEditorsChoice && (
-          <span className="px-2 py-1 bg-yellow-500 text-black text-[10px] font-black uppercase tracking-widest rounded shadow-lg">Editor's Choice</span>
-        )}
-      </div>
-      <div className={cn("flex items-center justify-between text-xs text-gray-500", compact ? "mb-3" : "mb-4")}>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1"><Calendar size={12} />{item.date}</div>
+  (() => {
+    const tutorialLevel =
+      item.type === 'tutorial'
+        ? item.difficulty === 'expert'
+          ? '专家'
+          : item.difficulty === 'intermediate'
+            ? '进阶'
+            : '入门'
+        : null;
+    const tutorialLevelClass =
+      tutorialLevel === '专家'
+        ? 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-400/35'
+        : tutorialLevel === '进阶'
+          ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/35'
+          : 'bg-lime-500/15 text-lime-300 border-lime-400/35';
+
+    return (
+      <Card className={cn("group cursor-pointer flex flex-col h-full overflow-hidden relative", className)} onClick={onClick}>
+        <div className="aspect-video overflow-hidden">
+          <img
+            src={item.cover}
+            alt={item.title}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            referrerPolicy="no-referrer"
+          />
         </div>
-        <div className="flex items-center gap-1 text-orange-400">
-          <Flame size={12} fill="currentColor" />
-          {item.importance}
+        <div className={cn("flex flex-col flex-grow", compact ? "p-4" : "p-6")}>
+          <div className="mb-3 flex items-center gap-2 flex-wrap">
+            <Badge label={item.categoryTag} />
+            {tutorialLevel && <Badge label={tutorialLevel} className={tutorialLevelClass} />}
+            {item.isEditorsChoice && (
+              <span className="px-2 py-1 bg-yellow-500 text-black text-[10px] font-black uppercase tracking-widest rounded shadow-lg">Editor's Choice</span>
+            )}
+          </div>
+          <div className={cn("flex items-center justify-between text-xs text-gray-500", compact ? "mb-3" : "mb-4")}>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1"><Calendar size={12} />{item.date}</div>
+            </div>
+            <div className="flex items-center gap-1 text-orange-400">
+              <Flame size={12} fill="currentColor" />
+              {item.importance}
+            </div>
+          </div>
+          <h3 className={cn("font-bold mb-3 line-clamp-2 group-hover:text-[#1ed661] transition-colors leading-snug", compact ? "text-base md:text-lg" : "text-base md:text-lg")}>{item.title}</h3>
+          <p className={cn("text-sm text-gray-400 leading-relaxed", compact ? "line-clamp-2" : "line-clamp-3")}>{item.summary}</p>
         </div>
-      </div>
-      <h3 className={cn("font-bold mb-3 line-clamp-2 group-hover:text-[#1ed661] transition-colors leading-snug", compact ? "text-base md:text-lg" : "text-base md:text-lg")}>{item.title}</h3>
-      <p className={cn("text-sm text-gray-400 leading-relaxed", compact ? "line-clamp-2" : "line-clamp-3")}>{item.summary}</p>
-    </div>
-  </Card>
+      </Card>
+    );
+  })()
 );
