@@ -1,0 +1,159 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: dark;
+}
+
+html[data-theme='light'] {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #0d1117;
+  color: #f0f6fc;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+  transition: background-color 0.45s ease, color 0.45s ease;
+}
+
+html[data-theme='light'] body {
+  background: #f3f7fc;
+  color: #0f172a;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(30, 214, 97, 0.35);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(30, 214, 97, 0.55);
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-track {
+  background: rgba(20, 28, 45, 0.08);
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: rgba(27, 171, 84, 0.42);
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(27, 171, 84, 0.58);
+}
+
+.app-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.ambient-layer,
+.ambient-noise {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.ambient-layer-a {
+  background:
+    radial-gradient(52rem 52rem at 12% 8%, rgba(34, 197, 94, 0.28), transparent 64%),
+    radial-gradient(42rem 42rem at 84% 20%, rgba(16, 185, 129, 0.2), transparent 65%);
+  animation: auroraShiftA 16s ease-in-out infinite alternate;
+}
+
+.ambient-layer-b {
+  background:
+    radial-gradient(36rem 36rem at 24% 82%, rgba(56, 189, 248, 0.15), transparent 67%),
+    radial-gradient(34rem 34rem at 72% 88%, rgba(20, 184, 166, 0.12), transparent 68%);
+  animation: auroraShiftB 22s ease-in-out infinite alternate;
+}
+
+.ambient-noise {
+  opacity: 0.12;
+  background-image:
+    linear-gradient(transparent 98%, rgba(255, 255, 255, 0.06) 100%),
+    linear-gradient(90deg, transparent 98%, rgba(255, 255, 255, 0.03) 100%);
+  background-size: 4px 4px, 4px 4px;
+  mix-blend-mode: soft-light;
+}
+
+.app-shell > .ambient-layer,
+.app-shell > .ambient-noise {
+  z-index: 0;
+}
+
+.app-shell.light-mode {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+.app-shell.light-mode img,
+.app-shell.light-mode video {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+.app-shell.light-mode .ambient-layer,
+.app-shell.light-mode .ambient-noise {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+@keyframes auroraShiftA {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(2.5%, -1.5%, 0) scale(1.06);
+  }
+}
+
+@keyframes auroraShiftB {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(-2.8%, 2%, 0) scale(1.08);
+  }
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
