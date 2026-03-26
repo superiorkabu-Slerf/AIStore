@@ -1797,7 +1797,7 @@ export default function App() {
     };
 
     return (
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-14 md:space-y-16">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="flex flex-col gap-14 md:gap-16">
         <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6">
           {featured && (
             <div
@@ -1865,7 +1865,7 @@ export default function App() {
           </div>
         </div>
 
-        <section className="space-y-6">
+        <section className="space-y-6 order-3">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
             <h3 className="text-2xl font-black flex items-center gap-3">
               <BookOpen className="text-[#1ed661]" size={28} />
@@ -1903,13 +1903,13 @@ export default function App() {
           </div>
         </section>
 
-        <section className="space-y-7">
+        <section className="space-y-7 order-4">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
             <h3 className="text-2xl font-black flex items-center gap-3">
               <Film className="text-pink-400" size={26} />
               优质视频
             </h3>
-            <span className="text-xs text-gray-500 font-bold uppercase tracking-widest">Bilibili 风格信息流</span>
+            <a href="#/list?tab=video" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">查看更多</a>
           </div>
           {videoPicks.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-5">
@@ -1968,20 +1968,13 @@ export default function App() {
           )}
         </section>
 
-        <section className="space-y-7">
+        <section className="space-y-7 order-5">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
             <h3 className="text-2xl font-black flex items-center gap-3">
               <Headphones className="text-cyan-400" size={26} />
               AI播客
             </h3>
-            <a
-              href="https://caip.org.cn/aiCommunity/ai-podcast"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors"
-            >
-              参考播客布局
-            </a>
+            <a href="#/list?tab=podcast" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">查看更多</a>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {podcastPicks.map((item) => (
@@ -2028,11 +2021,11 @@ export default function App() {
           </div>
         </section>
 
-        <section className="space-y-8">
+        <section className="space-y-8 order-1">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
             <h3 className="text-2xl font-black flex items-center gap-3">
               <TrendingUp className="text-orange-500" size={28} />
-              深度文章
+              深度好文
             </h3>
             <a href="#/list?tab=article" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">查看全部</a>
           </div>
@@ -2081,13 +2074,34 @@ export default function App() {
           )}
         </section>
 
-        <section className="space-y-8">
+        <section className="space-y-8 order-2">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
             <h3 className="text-2xl font-black flex items-center gap-3">
               <GraduationCap className="text-blue-500" size={28} />
               教程精选
             </h3>
             <a href="#/list?tab=tutorial" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">查看全部</a>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <button
+              onClick={() => {
+                window.location.hash = '#/learning-path';
+              }}
+              className="text-left rounded-2xl border border-[#1ed661]/25 bg-gradient-to-br from-[#1ed661]/12 via-[#1ed661]/6 to-transparent p-5 hover:border-[#1ed661]/45 hover:shadow-[0_0_24px_rgba(30,214,97,0.16)] transition-all"
+            >
+              <div className="text-[11px] uppercase tracking-widest font-bold text-[#9ef1bd] mb-2">学习模块</div>
+              <h4 className="text-xl font-black text-white mb-2">7天学习路径</h4>
+              <p className="text-sm text-gray-300 leading-7">按 7 天节奏拆解知识与实操任务，适合系统化入门与进阶复盘。</p>
+              <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[#9ef1bd]">
+                进入学习路径
+                <ArrowRight size={14} />
+              </span>
+            </button>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+              <div className="text-[11px] uppercase tracking-widest font-bold text-gray-500 mb-2">教程文章模块</div>
+              <h4 className="text-xl font-black text-white mb-2">纯教程文章</h4>
+              <p className="text-sm text-gray-400 leading-7">下方教程内容保持卡片浏览，支持标签快捷筛选，便于按主题快速查找。</p>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 -mt-1">
             <span className="text-[11px] uppercase tracking-widest text-gray-500 font-bold mr-1">快捷标签</span>
@@ -2137,60 +2151,7 @@ export default function App() {
           )}
         </section>
 
-        <section className="space-y-7">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-white/5 pb-4">
-            <div className="flex items-center gap-3">
-              <Zap className="text-[#1ed661]" size={24} />
-              <h3 className="text-2xl font-black">7天学习路径</h3>
-            </div>
-            <a
-              href="https://openclaw101.dev/zh"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors"
-            >
-              参考路径布局
-            </a>
-          </div>
-          <p className="text-sm md:text-base text-gray-400">
-            结合资讯阅读、术语理解与教程实操，从 Day 1 到 Day 7 按阶段推进，每天都有明确目标、关键动作与交付结果。
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            {LEARNING_PATH_7D.map((day) => (
-              <article
-                key={day.id}
-                className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-[#111923]/95 via-[#0f1620]/95 to-[#0d1117]/95 p-5 hover:border-[#1ed661]/35 hover:shadow-[0_0_24px_rgba(30,214,97,0.08)] transition-all"
-              >
-                <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="text-[10px] px-2 py-1 rounded-full border border-[#1ed661]/30 bg-[#1ed661]/10 text-[#9ef1bd] font-black tracking-widest">
-                    {day.dayLabel}
-                  </span>
-                  <Badge label={day.trackTag} className="bg-white/[0.02] border-white/15 text-gray-300" />
-                </div>
-                <h4 className="text-base font-black text-white leading-snug mb-2 min-h-[44px]">{day.title}</h4>
-                <p className="text-sm text-gray-400 leading-6 mb-3 line-clamp-3">{day.summary}</p>
-                <ul className="space-y-1.5 mb-4">
-                  {day.highlights.map((point) => (
-                    <li key={point} className="text-xs text-gray-300 flex items-start gap-2">
-                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#1ed661] shrink-0" />
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-[11px] text-gray-500 mb-4 line-clamp-2">交付成果：{day.deliverable}</p>
-                <a
-                  href={day.targetHash}
-                  className="inline-flex items-center gap-1 text-xs text-[#9ef1bd] hover:text-[#1ed661] transition-colors font-semibold"
-                >
-                  查看相关内容
-                  <ArrowRight size={12} />
-                </a>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="space-y-8">
+        <section className="space-y-8 order-6">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
             <h3 className="text-2xl font-black flex items-center gap-3">
               <Star className="text-yellow-500" size={28} />
@@ -2212,6 +2173,91 @@ export default function App() {
                   <p className="text-xs text-gray-500 line-clamp-1">{tool.tagline}</p>
                 </div>
               </div>
+            ))}
+          </div>
+        </section>
+      </motion.div>
+    );
+  };
+
+  const renderLearningPath = () => {
+    const tutorialSamples = allNews.filter((item) => item.type === 'tutorial').slice(0, 4);
+
+    return (
+      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} className="space-y-8">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <button
+            onClick={() => {
+              window.location.hash = '#/portal';
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm text-gray-300 hover:text-white hover:border-[#1ed661]/40 transition-colors"
+          >
+            <ArrowLeft size={16} />
+            返回AI百科
+          </button>
+          <a href="#/list?tab=tutorial" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">
+            查看教程文章
+          </a>
+        </div>
+
+        <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#111923] via-[#0d1117] to-[#0b1510] p-8 md:p-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#1ed661]/30 bg-[#1ed661]/10 text-[#9ef1bd] text-[11px] font-black uppercase tracking-widest mb-4">
+            <Zap size={13} />
+            学习模块
+          </div>
+          <h1 className="text-3xl md:text-4xl font-black mb-4">7天学习路径</h1>
+          <p className="text-base md:text-lg text-gray-300 max-w-3xl leading-8">
+            把术语认知、教程实操与深度阅读组合成 7 天闭环。每天给出目标、关键动作和交付结果，便于按节奏推进。
+          </p>
+        </section>
+
+        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {LEARNING_PATH_7D.map((day) => (
+            <article
+              key={day.id}
+              className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-[#111923]/95 via-[#0f1620]/95 to-[#0d1117]/95 p-5 hover:border-[#1ed661]/35 hover:shadow-[0_0_24px_rgba(30,214,97,0.08)] transition-all"
+            >
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <span className="text-[10px] px-2 py-1 rounded-full border border-[#1ed661]/30 bg-[#1ed661]/10 text-[#9ef1bd] font-black tracking-widest">
+                  {day.dayLabel}
+                </span>
+                <Badge label={day.trackTag} className="bg-white/[0.02] border-white/15 text-gray-300" />
+              </div>
+              <h4 className="text-base font-black text-white leading-snug mb-2 min-h-[44px]">{day.title}</h4>
+              <p className="text-sm text-gray-400 leading-6 mb-3 line-clamp-3">{day.summary}</p>
+              <ul className="space-y-1.5 mb-4">
+                {day.highlights.map((point) => (
+                  <li key={point} className="text-xs text-gray-300 flex items-start gap-2">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#1ed661] shrink-0" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[11px] text-gray-500 mb-4 line-clamp-2">交付成果：{day.deliverable}</p>
+              <a
+                href={day.targetHash}
+                className="inline-flex items-center gap-1 text-xs text-[#9ef1bd] hover:text-[#1ed661] transition-colors font-semibold"
+              >
+                查看相关内容
+                <ArrowRight size={12} />
+              </a>
+            </article>
+          ))}
+        </section>
+
+        <section className="space-y-5">
+          <div className="flex items-center justify-between border-b border-white/5 pb-4">
+            <h3 className="text-2xl font-black flex items-center gap-3">
+              <GraduationCap className="text-blue-500" size={26} />
+              配套教程文章
+            </h3>
+            <a href="#/list?tab=tutorial" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">
+              查看更多
+            </a>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {tutorialSamples.map((item) => (
+              <ArticleCard key={item.id} item={item} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />
             ))}
           </div>
         </section>
@@ -2310,6 +2356,8 @@ export default function App() {
             renderHome()
           ) : view === 'portal' ? (
             renderPortal()
+          ) : view === 'learning_path' ? (
+            renderLearningPath()
           ) : view === 'list' ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="mb-8 text-center">
@@ -2800,9 +2848,6 @@ export default function App() {
                   </button>
                   <div className="flex items-center gap-3">
                     <Badge label={currentNews.categoryTag} />
-                    {currentNews.type === 'tutorial' && getTutorialLevel(currentNews) && (
-                      <Badge label={getTutorialLevel(currentNews) as string} className={getTutorialLevelBadgeClass(getTutorialLevel(currentNews) as string)} />
-                    )}
                     <span className="text-xs text-gray-500 flex items-center gap-1"><Clock size={12} /> {currentNews.date}</span>
                   </div>
                 </div>
@@ -2823,7 +2868,7 @@ export default function App() {
                 <div className="flex items-center justify-end pt-5 border-t border-white/5 gap-6 flex-wrap">
                   <div className="flex items-center gap-6 text-xs text-gray-600 font-bold uppercase tracking-widest">
                     <span className="flex items-center gap-1.5"><Eye size={14} /> {currentNews.readCount.toLocaleString()}</span>
-                    <span>预计阅读时间{currentNews.estimatedTime?.replace(/\s*min/i, '分钟').replace(/\s*MIN/i, '分钟') || '8分钟'}</span>
+                    <span>预计阅读时间8分钟</span>
                   </div>
                 </div>
               </div>
