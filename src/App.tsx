@@ -935,7 +935,7 @@ export default function App() {
           <div className="relative">
             <Badge label="AISTORE 首页" className="mb-5 bg-[#1ed661]/15 text-[#1ed661] border-[#1ed661]/30" />
             <h1 className="text-4xl md:text-6xl font-black leading-tight tracking-tight mb-6">
-              保持专业节奏，
+              保持专业节奏kkkk，
               <br />
               一站进入 <span className="text-[#1ed661]">AI 资讯体系</span>
             </h1>
