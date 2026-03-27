@@ -233,7 +233,7 @@ const LEARNING_PATH_7D: LearningPathDay[] = [
 ];
 
 const SOURCE_FILTER_OPTIONS: Array<{ value: SourceFilter; label: string }> = [
-  { value: 'all', label: '全部' },
+  { value: 'all', label: '全部来源' },
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'openai', label: 'OpenAI' },
   { value: 'meta', label: 'Meta' },
@@ -241,7 +241,7 @@ const SOURCE_FILTER_OPTIONS: Array<{ value: SourceFilter; label: string }> = [
 ];
 
 const THEME_FILTER_OPTIONS: Array<{ value: ThemeFilter; label: string }> = [
-  { value: 'all', label: '全部' },
+  { value: 'all', label: '全部主题' },
   { value: 'model', label: '模型' },
   { value: 'hardware', label: '硬件' },
   { value: 'policy', label: '政策' },
@@ -431,6 +431,38 @@ const parseDateValue = (date: string): number => new Date(`${date}T00:00:00+08:0
 const parseDateTimeValue = (date: string, time?: string): number => {
   const normalized = (time || '00:00').padStart(5, '0');
   return new Date(`${date}T${normalized}:00+08:00`).getTime();
+};
+
+const buildAppHashUrl = (targetHash: string): string =>
+  `${window.location.origin}${window.location.pathname}${window.location.search}${targetHash}`;
+
+const openNewsDetailInNewTab = (slug: string, fromHash?: string): void => {
+  const sourceHash = fromHash || window.location.hash || '#/portal';
+  const targetHash = `#/detail/${slug}?from=${encodeURIComponent(sourceHash)}`;
+  window.open(buildAppHashUrl(targetHash), '_blank', 'noopener,noreferrer');
+};
+
+const navigateToTermDetail = (termId: string, fromHash?: string): void => {
+  const sourceHash = fromHash || window.location.hash || '#/portal';
+  window.location.hash = `#/term/${termId}?from=${encodeURIComponent(sourceHash)}`;
+};
+
+const getBackLabelFromHash = (targetHash: string): string => {
+  if (targetHash === '#/' || targetHash.startsWith('#/home')) return '返回首页';
+  if (targetHash.startsWith('#/portal')) return '返回AI百科';
+  if (targetHash.startsWith('#/search')) return '返回搜索';
+  if (targetHash.startsWith('#/list')) {
+    const params = new URLSearchParams(targetHash.split('?')[1] || '');
+    const tab = params.get('tab');
+    if (tab === 'flash') return '返回AI快讯';
+    if (tab === 'article') return '返回深度好文';
+    if (tab === 'tutorial') return '返回精选教程';
+    if (tab === 'knowledge') return '返回术语百科';
+    if (tab === 'video') return '返回优质视频';
+    if (tab === 'podcast') return '返回AI播客';
+    return '返回列表';
+  }
+  return '返回上层';
 };
 
 const getNewsSource = (item: NewsItem): SourceFilter => {
@@ -849,7 +881,7 @@ const ToolDetail: React.FC<{ tool: Tool; relatedNews: NewsItem[] }> = ({ tool, r
               key={news.id}
               className="w-full text-left p-6 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between hover:bg-white/[0.05] transition-all group"
               onClick={() => {
-                window.location.hash = `#/detail/${news.slug}`;
+                openNewsDetailInNewTab(news.slug, window.location.hash || '#/');
               }}
             >
               <div className="flex items-center gap-4">
@@ -927,6 +959,7 @@ export default function App() {
   const podcastDetailAudioRef = useRef<HTMLAudioElement | null>(null);
   const [podcastDurationSec, setPodcastDurationSec] = useState(0);
   const [podcastCurrentSec, setPodcastCurrentSec] = useState(0);
+  const [isPodcastDetailPlaying, setIsPodcastDetailPlaying] = useState(false);
 
   const tutorialFeed = useMemo(() => buildTutorialFeed(NEWS_DATA), []);
   const termArticles = useMemo(() => buildTermArticles(GLOSSARY_DATA), []);
@@ -1145,6 +1178,16 @@ export default function App() {
     setPlayingPodcastId(null);
   }, [view]);
 
+  const detailParams = useMemo(() => {
+    if (!hash.startsWith('#/detail/')) return new URLSearchParams();
+    return new URLSearchParams(hash.split('?')[1] || '');
+  }, [hash]);
+
+  const termParams = useMemo(() => {
+    if (!hash.startsWith('#/term/')) return new URLSearchParams();
+    return new URLSearchParams(hash.split('?')[1] || '');
+  }, [hash]);
+
   const currentSlug = hash.startsWith('#/detail/') ? hash.split('#/detail/')[1]?.split('?')[0] : null;
   const currentNews = useMemo(() => allNews.find((item) => item.slug === currentSlug), [allNews, currentSlug]);
 
@@ -1205,7 +1248,9 @@ export default function App() {
   useEffect(() => {
     setPodcastCurrentSec(0);
     setPodcastDurationSec(currentPodcast ? parseDurationLabelToSeconds(currentPodcast.duration) : 0);
+    setIsPodcastDetailPlaying(false);
     if (podcastDetailAudioRef.current) {
+      podcastDetailAudioRef.current.pause();
       podcastDetailAudioRef.current.currentTime = 0;
     }
   }, [currentPodcast?.id]);
@@ -1243,6 +1288,19 @@ export default function App() {
   const currentLikeCount = currentNews ? likeCounts[currentNews.id] ?? 0 : 0;
   const isCurrentNewsLiked = currentNews ? likedNewsIds.includes(currentNews.id) : false;
   const currentNewsModule = currentNews ? getNewsModuleLabel(currentNews) : '';
+  const currentNewsListTab: ListTab = currentNews
+    ? currentNews.type === 'tutorial'
+      ? 'tutorial'
+      : currentNews.type === 'flash'
+        ? 'flash'
+        : 'article'
+    : 'article';
+  const detailFromHash = detailParams.get('from') || '';
+  const detailBackHash = detailFromHash || '#/portal';
+  const detailBackLabel = getBackLabelFromHash(detailBackHash);
+  const termFromHash = termParams.get('from') || '';
+  const termBackHash = termFromHash || '#/portal';
+  const termBackLabel = getBackLabelFromHash(termBackHash);
   const currentVideoLikeCount = currentVideo ? videoLikeCounts[currentVideo.id] ?? currentVideo.likes : 0;
   const isCurrentVideoLiked = currentVideo ? videoLikedIds.includes(currentVideo.id) : false;
   const currentPodcastLikeCount = currentPodcast ? podcastLikeCounts[currentPodcast.id] ?? currentPodcast.likes : 0;
@@ -1498,6 +1556,15 @@ export default function App() {
     return ['全部快讯', ...tags];
   }, [flashItems]);
 
+  const contentAllTopicLabel = useMemo(() => {
+    if (listTab === 'article') return '全部好文';
+    if (listTab === 'tutorial') return '全部教程';
+    if (listTab === 'knowledge') return '全部术语';
+    if (listTab === 'video') return '全部视频';
+    if (listTab === 'podcast') return '全部播客';
+    return '全部分类';
+  }, [listTab]);
+
   const filteredFlashItems = useMemo(() => {
     const filtered = flashItems.filter((item) => {
       const byCategory =
@@ -1676,6 +1743,24 @@ export default function App() {
     }
   };
 
+  const handleTogglePodcastDetailPlayback = async () => {
+    const player = podcastDetailAudioRef.current;
+    if (!player) return;
+
+    if (player.paused) {
+      try {
+        await player.play();
+        setIsPodcastDetailPlaying(true);
+      } catch {
+        setShareFeedback('音频暂不可播放，请稍后重试');
+      }
+      return;
+    }
+
+    player.pause();
+    setIsPodcastDetailPlaying(false);
+  };
+
   const handleSubmitComment = () => {
     if (!currentNews || !isLoggedIn || !commentDraft.trim()) return;
 
@@ -1775,7 +1860,7 @@ export default function App() {
           <h2 className="text-2xl font-black">推荐阅读</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {picks.map((item) => (
-              <ArticleCard key={item.id} item={item} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />
+              <ArticleCard key={item.id} item={item} onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/')} />
             ))}
           </div>
         </section>
@@ -1810,7 +1895,7 @@ export default function App() {
           {featured && (
             <div
               className="relative aspect-[16/10] lg:aspect-auto lg:h-[500px] rounded-3xl overflow-hidden cursor-pointer group border border-white/10"
-              onClick={() => (window.location.hash = `#/detail/${featured.slug}`)}
+              onClick={() => openNewsDetailInNewTab(featured.slug, window.location.hash || '#/portal')}
             >
               <img src={featured.cover} alt={featured.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" referrerPolicy="no-referrer" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/40 to-transparent" />
@@ -1856,7 +1941,7 @@ export default function App() {
               {flashes.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => (window.location.hash = `#/detail/${item.slug}`)}
+                  onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/portal')}
                   className="w-full text-left flex gap-3 rounded-xl border border-transparent p-3 hover:bg-[#1ed661]/10 hover:border-[#1ed661]/20 transition-colors group/item"
                 >
                   <div className="mt-1 w-2.5 h-2.5 rounded-full bg-[#1ed661] shadow-[0_0_10px_rgba(30,214,97,0.5)] group-hover/item:scale-110 transition-transform" />
@@ -1894,25 +1979,18 @@ export default function App() {
               </a>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-            {portalGlossaryItems.map((item) => (
-              <div key={item.id} className="relative group">
-                <button
-                  onClick={() => {
-                    window.location.hash = `#/term/${item.id}`;
-                  }}
-                  className="w-full p-4 bg-white/[0.03] border border-white/10 rounded-xl text-center hover:bg-[#1ed661]/10 hover:border-[#1ed661]/30 transition-all"
-                >
-                  <span className="text-sm font-bold text-gray-300 group-hover:text-[#1ed661]">{item.term}</span>
-                </button>
-                <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-56 -translate-x-1/2 rounded-2xl border border-white/10 bg-[#111923]/95 p-3 opacity-0 shadow-2xl transition-all duration-200 group-hover:opacity-100">
-                  <p className="text-xs font-bold text-[#1ed661] mb-1">术语预览</p>
-                  <p className="text-xs text-gray-300 leading-6">{item.definition}</p>
-                  <p className="text-[11px] text-gray-500 mt-2">点击进入词条详情</p>
-                </div>
-              </div>
-            ))}
-          </div>
+	          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+	            {portalGlossaryItems.map((item) => (
+	              <button
+	                key={item.id}
+	                onClick={() => navigateToTermDetail(item.id, window.location.hash || '#/portal')}
+	                className="w-full p-4 bg-white/[0.03] border border-white/10 rounded-xl text-left hover:bg-[#1ed661]/10 hover:border-[#1ed661]/30 transition-all"
+	              >
+	                <p className="text-sm font-bold text-gray-100">{item.term}</p>
+	                <p className="mt-2 text-xs text-gray-400 leading-5 line-clamp-3">{item.definition}</p>
+	              </button>
+	            ))}
+	          </div>
         </section>
 
         <section className="space-y-7 order-4">
@@ -2070,7 +2148,7 @@ export default function App() {
           {articles.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {articles.map((item) => (
-                <Card key={item.id} className="h-full" onClick={() => (window.location.hash = `#/detail/${item.slug}`)}>
+                <Card key={item.id} className="h-full" onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/portal')}>
                   <div className="aspect-video overflow-hidden">
                     <img src={item.cover} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
                   </div>
@@ -2126,7 +2204,7 @@ export default function App() {
           {tutorials.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {tutorials.map((item) => (
-                <Card key={item.id} className="h-full" onClick={() => (window.location.hash = `#/detail/${item.slug}`)}>
+                <Card key={item.id} className="h-full" onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/portal')}>
                   <div className="aspect-video overflow-hidden">
                     <img src={item.cover} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" referrerPolicy="no-referrer" />
                   </div>
@@ -2330,7 +2408,7 @@ export default function App() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {tutorialSamples.map((item) => (
-              <ArticleCard key={item.id} item={item} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />
+              <ArticleCard key={item.id} item={item} onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/learning-path')} />
             ))}
           </div>
         </section>
@@ -2434,35 +2512,102 @@ export default function App() {
           ) : view === 'list' ? (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="news-list-page">
               <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-10 items-start">
-                <motion.div
-                  key={`${listTab}-${flashViewMode}-${contentLayoutMode}-${contentTopicFilter}-${contentSourceFilter}-${contentThemeFilter}-${contentSort}-${contentDateRange}-${searchQuery}`}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.22, ease: 'easeOut' }}
-                  className="min-w-0 space-y-6"
-                >
-                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 border-b border-white/10 pb-3">
-                    {[
-                      { id: 'flash', label: 'AI快讯' },
-                      { id: 'article', label: '深度好文' },
-                      { id: 'tutorial', label: '精选教程' },
-                      { id: 'knowledge', label: '术语百科' },
-                      { id: 'video', label: '优质视频' },
-                      { id: 'podcast', label: 'AI播客' }
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => goToListTab(tab.id as ListTab)}
-                        className={cn(
-                          'text-sm md:text-base font-semibold tracking-tight transition-colors',
-                          listTab === tab.id
-                            ? 'text-[#1ed661]'
-                            : 'text-gray-400 hover:text-gray-100'
-                        )}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
+	                <motion.div
+	                  key={`${listTab}-${flashViewMode}-${contentLayoutMode}-${contentTopicFilter}-${contentSourceFilter}-${contentThemeFilter}-${contentSort}-${contentDateRange}-${searchQuery}`}
+	                  initial={{ opacity: 0, y: 8 }}
+	                  animate={{ opacity: 1, y: 0 }}
+	                  transition={{ duration: 0.22, ease: 'easeOut' }}
+	                  className="min-w-0 space-y-6"
+	                >
+	                  <button
+	                    onClick={() => (window.location.hash = '#/portal')}
+	                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm text-gray-300 hover:text-white hover:border-[#1ed661]/40 transition-colors"
+	                  >
+	                    <ArrowLeft size={16} />
+	                    返回AI百科
+	                  </button>
+
+	                  <div className="flex items-end justify-between gap-4 border-b border-white/10 pb-3">
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5">
+                      {[
+                        { id: 'flash', label: 'AI快讯' },
+                        { id: 'article', label: '深度好文' },
+                        { id: 'tutorial', label: '精选教程' },
+                        { id: 'knowledge', label: '术语百科' },
+                        { id: 'video', label: '优质视频' },
+                        { id: 'podcast', label: 'AI播客' }
+                      ].map((tab) => (
+                        <button
+                          key={tab.id}
+                          onClick={() => goToListTab(tab.id as ListTab)}
+                          className={cn(
+                            'text-sm md:text-base font-semibold tracking-tight transition-colors',
+                            listTab === tab.id
+                              ? 'text-[#1ed661]'
+                              : 'text-gray-400 hover:text-gray-100'
+                          )}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {listTab === 'flash' ? (
+                        <>
+                          <button
+                            onClick={() => setFlashViewMode('compact')}
+                            className={cn(
+                              'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
+                              flashViewMode === 'compact'
+                                ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
+                                : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
+                            )}
+                            aria-label="极简快讯"
+                          >
+                            <AlignJustify size={15} />
+                          </button>
+                          <button
+                            onClick={() => setFlashViewMode('detail')}
+                            className={cn(
+                              'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
+                              flashViewMode === 'detail'
+                                ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
+                                : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
+                            )}
+                            aria-label="详情快讯"
+                          >
+                            <List size={15} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setContentLayoutMode('list')}
+                            className={cn(
+                              'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
+                              contentLayoutMode === 'list'
+                                ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
+                                : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
+                            )}
+                            aria-label="列表视图"
+                          >
+                            <AlignJustify size={15} />
+                          </button>
+                          <button
+                            onClick={() => setContentLayoutMode('card')}
+                            className={cn(
+                              'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
+                              contentLayoutMode === 'card'
+                                ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
+                                : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
+                            )}
+                            aria-label="卡片视图"
+                          >
+                            <LayoutGrid size={15} />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   {listTab === 'flash' && (
@@ -2472,7 +2617,7 @@ export default function App() {
                           {filteredFlashItems.map((item, idx, arr) => {
                             const prev = idx > 0 ? arr[idx - 1] : null;
                             const showDate = !prev || prev.date !== item.date;
-                            return <TimelineItem key={item.id} item={item} showDate={showDate} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />;
+                            return <TimelineItem key={item.id} item={item} showDate={showDate} onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/list?tab=flash')} />;
                           })}
                         </div>
                       ) : (
@@ -2488,7 +2633,7 @@ export default function App() {
                                   </div>
                                 )}
                                 <button
-                                  onClick={() => (window.location.hash = `#/detail/${item.slug}`)}
+                                  onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/list?tab=flash')}
                                   className="w-full rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors px-4 py-3 flex items-center gap-4 text-left"
                                 >
                                   <span className="text-[#1ed661] text-base font-black w-14 flex-shrink-0">{item.exactTime}</span>
@@ -2509,13 +2654,13 @@ export default function App() {
                       contentLayoutMode === 'list' ? (
                         <div className="space-y-4">
                           {filteredArticleItems.map((item) => (
-                            <NewsHorizontalCard key={item.id} item={item} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />
+                            <NewsHorizontalCard key={item.id} item={item} onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/list?tab=article')} />
                           ))}
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           {filteredArticleItems.map((item) => (
-                            <ArticleCard key={item.id} item={item} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />
+                            <ArticleCard key={item.id} item={item} onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/list?tab=article')} />
                           ))}
                         </div>
                       )
@@ -2529,13 +2674,13 @@ export default function App() {
                       contentLayoutMode === 'list' ? (
                         <div className="space-y-4">
                           {filteredTutorialItems.map((item) => (
-                            <NewsHorizontalCard key={item.id} item={item} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />
+                            <NewsHorizontalCard key={item.id} item={item} onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/list?tab=tutorial')} />
                           ))}
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           {filteredTutorialItems.map((item) => (
-                            <ArticleCard key={item.id} item={item} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />
+                            <ArticleCard key={item.id} item={item} onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/list?tab=tutorial')} />
                           ))}
                         </div>
                       )
@@ -2549,13 +2694,13 @@ export default function App() {
                       contentLayoutMode === 'list' ? (
                         <div className="space-y-4">
                           {filteredKnowledgeItems.map((item) => (
-                            <TermHorizontalCard key={item.id} item={item} onClick={() => (window.location.hash = `#/term/${item.id}`)} />
+                            <TermHorizontalCard key={item.id} item={item} onClick={() => navigateToTermDetail(item.id, window.location.hash || '#/list?tab=knowledge')} />
                           ))}
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           {filteredKnowledgeItems.map((item) => (
-                            <Card key={item.id} className="h-full p-6" onClick={() => (window.location.hash = `#/term/${item.id}`)}>
+                            <Card key={item.id} className="h-full p-6" onClick={() => navigateToTermDetail(item.id, window.location.hash || '#/list?tab=knowledge')}>
                               <div className="mb-3 flex items-center gap-2 flex-wrap">
                                 <Badge label="术语百科" className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30" />
                                 {item.topicTags.slice(0, 2).map((tag) => (
@@ -2711,140 +2856,97 @@ export default function App() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <AlignJustify size={14} className="text-gray-500 flex-shrink-0" />
-                        <select
-                          value={listTab === 'flash' ? flashCategoryFilter : contentTopicFilter}
-                          onChange={(e) => {
-                            if (listTab === 'flash') {
-                              setFlashCategoryFilter(e.target.value);
-                              return;
-                            }
-                            setContentTopicFilter(e.target.value);
-                          }}
-                          className="h-9 flex-1 rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors"
-                        >
-                          {(listTab === 'flash' ? flashCategoryOptions : listTopicOptions).map((topic) => (
-                            <option key={topic} value={topic}>
-                              {topic}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="relative flex-1">
+                          <select
+                            value={listTab === 'flash' ? flashCategoryFilter : contentTopicFilter}
+                            onChange={(e) => {
+                              if (listTab === 'flash') {
+                                setFlashCategoryFilter(e.target.value);
+                                return;
+                              }
+                              setContentTopicFilter(e.target.value);
+                            }}
+                            className="h-9 w-full rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors appearance-none"
+                          >
+                            {(listTab === 'flash' ? flashCategoryOptions : listTopicOptions).map((topic) => (
+                              <option key={topic} value={topic}>
+                                {topic === '全部' ? contentAllTopicLabel : topic}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown size={14} className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" />
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <CalendarDays size={14} className="text-gray-500 flex-shrink-0" />
-                        <select
-                          value={contentDateRange}
-                          onChange={(e) => setContentDateRange(e.target.value as ContentDateRange)}
-                          className="h-9 flex-1 rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors"
-                        >
-                          <option value="all">全部时间</option>
-                          <option value="3d">近3天</option>
-                          <option value="7d">近7天</option>
-                          <option value="30d">近30天</option>
-                        </select>
+                        <div className="relative flex-1">
+                          <select
+                            value={contentDateRange}
+                            onChange={(e) => setContentDateRange(e.target.value as ContentDateRange)}
+                            className="h-9 w-full rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors appearance-none"
+                          >
+                            <option value="all">全部时间</option>
+                            <option value="3d">近3天</option>
+                            <option value="7d">近7天</option>
+                            <option value="30d">近30天</option>
+                          </select>
+                          <ChevronDown size={14} className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" />
+                        </div>
                       </div>
 
                       {listTab !== 'knowledge' && (
                         <div className="flex items-center gap-2">
                           <ExternalLink size={14} className="text-gray-500 flex-shrink-0" />
-                          <select
-                            value={contentSourceFilter}
-                            onChange={(e) => setContentSourceFilter(e.target.value as SourceFilter)}
-                            className="h-9 flex-1 rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors"
-                          >
-                            {SOURCE_FILTER_OPTIONS.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                          <div className="relative flex-1">
+                            <select
+                              value={contentSourceFilter}
+                              onChange={(e) => setContentSourceFilter(e.target.value as SourceFilter)}
+                              className="h-9 w-full rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors appearance-none"
+                            >
+                              {SOURCE_FILTER_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown size={14} className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" />
+                          </div>
                         </div>
                       )}
 
                       <div className="flex items-center gap-2">
                         <BookOpen size={14} className="text-gray-500 flex-shrink-0" />
-                        <select
-                          value={contentThemeFilter}
-                          onChange={(e) => setContentThemeFilter(e.target.value as ThemeFilter)}
-                          className="h-9 flex-1 rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors"
-                        >
-                          {THEME_FILTER_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="relative flex-1">
+                          <select
+                            value={contentThemeFilter}
+                            onChange={(e) => setContentThemeFilter(e.target.value as ThemeFilter)}
+                            className="h-9 w-full rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors appearance-none"
+                          >
+                            {THEME_FILTER_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown size={14} className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" />
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <List size={14} className="text-gray-500 flex-shrink-0" />
-                        <select
-                          value={contentSort}
-                          onChange={(e) => setContentSort(e.target.value as ContentSort)}
-                          className="h-9 flex-1 rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors"
-                        >
-                          <option value="hot">热度优先</option>
-                          <option value="latest">最新发布</option>
-                          <option value="most_read">阅读最多</option>
-                        </select>
-                      </div>
-
-                      <div className="flex items-center gap-2 pt-1">
-                        {(listTab === 'flash' ? (
-                          <>
-                            <button
-                              onClick={() => setFlashViewMode('compact')}
-                              className={cn(
-                                'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
-                                flashViewMode === 'compact'
-                                  ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
-                                  : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
-                              )}
-                              aria-label="极简快讯"
-                            >
-                              <AlignJustify size={15} />
-                            </button>
-                            <button
-                              onClick={() => setFlashViewMode('detail')}
-                              className={cn(
-                                'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
-                                flashViewMode === 'detail'
-                                  ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
-                                  : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
-                              )}
-                              aria-label="详情快讯"
-                            >
-                              <List size={15} />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => setContentLayoutMode('list')}
-                              className={cn(
-                                'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
-                                contentLayoutMode === 'list'
-                                  ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
-                                  : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
-                              )}
-                              aria-label="列表视图"
-                            >
-                              <AlignJustify size={15} />
-                            </button>
-                            <button
-                              onClick={() => setContentLayoutMode('card')}
-                              className={cn(
-                                'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
-                                contentLayoutMode === 'card'
-                                  ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
-                                  : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
-                              )}
-                              aria-label="卡片视图"
-                            >
-                              <LayoutGrid size={15} />
-                            </button>
-                          </>
-                        ))}
+                        <div className="relative flex-1">
+                          <select
+                            value={contentSort}
+                            onChange={(e) => setContentSort(e.target.value as ContentSort)}
+                            className="h-9 w-full rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 pr-10 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors appearance-none"
+                          >
+                            <option value="hot">热度优先</option>
+                            <option value="latest">最新发布</option>
+                            <option value="most_read">阅读最多</option>
+                          </select>
+                          <ChevronDown size={14} className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2902,9 +3004,9 @@ export default function App() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-5xl mx-auto pt-2 pb-8 space-y-8">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <button onClick={() => (window.location.hash = '#/portal')} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm text-gray-300 hover:text-white hover:border-[#1ed661]/40 transition-colors">
+                  <button onClick={() => (window.location.hash = detailBackHash)} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm text-gray-300 hover:text-white hover:border-[#1ed661]/40 transition-colors">
                     <ArrowLeft size={16} />
-                    返回AI百科
+                    {detailBackLabel}
                   </button>
                   <div className="flex items-center gap-3">
                     <Badge label={currentNews.categoryTag} />
@@ -2913,9 +3015,19 @@ export default function App() {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-500 overflow-x-auto whitespace-nowrap">
                   <Home size={14} className="text-gray-500 flex-shrink-0" />
-                  <span>AI百科</span>
+                  <button
+                    onClick={() => (window.location.hash = '#/portal')}
+                    className="hover:text-gray-200 transition-colors"
+                  >
+                    AI百科
+                  </button>
                   <span className="text-gray-600">›</span>
-                  <span>{currentNewsModule}</span>
+                  <button
+                    onClick={() => (window.location.hash = `#/list?tab=${currentNewsListTab}`)}
+                    className="hover:text-gray-200 transition-colors"
+                  >
+                    {currentNewsModule}
+                  </button>
                   <span className="text-gray-600">›</span>
                   <span className="text-gray-400">{currentNews.title}</span>
                 </div>
@@ -3050,7 +3162,7 @@ export default function App() {
               <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
                   disabled={!previousNews}
-                  onClick={() => previousNews && (window.location.hash = `#/detail/${previousNews.slug}`)}
+                  onClick={() => previousNews && openNewsDetailInNewTab(previousNews.slug, detailBackHash)}
                   className="text-left p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
@@ -3062,7 +3174,7 @@ export default function App() {
 
                 <button
                   disabled={!nextNews}
-                  onClick={() => nextNews && (window.location.hash = `#/detail/${nextNews.slug}`)}
+                  onClick={() => nextNews && openNewsDetailInNewTab(nextNews.slug, detailBackHash)}
                   className="text-left p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <div className="text-xs text-gray-500 mb-2 flex items-center justify-end gap-1">
@@ -3091,7 +3203,7 @@ export default function App() {
                       item={item}
                       compact
                       className="h-full"
-                      onClick={() => (window.location.hash = `#/detail/${item.slug}`)}
+                      onClick={() => openNewsDetailInNewTab(item.slug, detailBackHash)}
                     />
                   ))}
                 </div>
@@ -3319,24 +3431,32 @@ export default function App() {
                 </div>
               </div>
 
-              <section className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 md:p-8 space-y-5">
-                <audio
-                  ref={podcastDetailAudioRef}
-                  controls
-                  className="w-full"
-                  src={currentPodcast.audioUrl}
-                  onLoadedMetadata={(e) => {
-                    const media = e.currentTarget;
-                    setPodcastDurationSec(Number.isFinite(media.duration) ? media.duration : 0);
-                  }}
-                  onTimeUpdate={(e) => setPodcastCurrentSec(e.currentTarget.currentTime)}
-                />
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-gray-500 font-semibold">
-                    <span>播放进度</span>
-                    <span>{formatAudioTime(podcastCurrentSec)} / {formatAudioTime(podcastDurationSec)}</span>
-                  </div>
-                  <input
+	              <section className="rounded-3xl border border-white/10 bg-white/[0.02] p-6 md:p-8 space-y-5">
+	                <audio
+	                  ref={podcastDetailAudioRef}
+	                  className="hidden"
+	                  src={currentPodcast.audioUrl}
+	                  onLoadedMetadata={(e) => {
+	                    const media = e.currentTarget;
+	                    setPodcastDurationSec(Number.isFinite(media.duration) ? media.duration : 0);
+	                  }}
+	                  onTimeUpdate={(e) => setPodcastCurrentSec(e.currentTarget.currentTime)}
+	                  onPlay={() => setIsPodcastDetailPlaying(true)}
+	                  onPause={() => setIsPodcastDetailPlaying(false)}
+	                  onEnded={() => setIsPodcastDetailPlaying(false)}
+	                />
+	                <div className="space-y-2">
+	                  <div className="flex items-center justify-between text-xs text-gray-500 font-semibold">
+	                    <button
+	                      onClick={() => void handleTogglePodcastDetailPlayback()}
+	                      className="inline-flex items-center gap-2 text-gray-300 hover:text-[#1ed661] transition-colors"
+	                    >
+	                      {isPodcastDetailPlaying ? <Pause size={14} /> : <PlayCircle size={14} />}
+	                      播放进度
+	                    </button>
+	                    <span>{formatAudioTime(podcastCurrentSec)} / {formatAudioTime(podcastDurationSec)}</span>
+	                  </div>
+	                  <input
                     type="range"
                     min={0}
                     max={Math.max(podcastDurationSec, 0)}
@@ -3447,15 +3567,15 @@ export default function App() {
                 </div>
               </section>
             </motion.div>
-          ) : view === 'term' && currentTerm ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-4xl mx-auto py-8 space-y-8">
-              <div className="flex items-center justify-between">
-                <button onClick={() => goToListTab('knowledge')} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm text-gray-300 hover:text-white hover:border-[#1ed661]/40 transition-colors">
-                  <ArrowLeft size={16} />
-                  返回术语百科
-                </button>
-                <Badge label="术语百科" className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30" />
-              </div>
+	          ) : view === 'term' && currentTerm ? (
+	            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-4xl mx-auto py-8 space-y-8">
+	              <div className="flex items-center justify-between">
+	                <button onClick={() => (window.location.hash = termBackHash)} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm text-gray-300 hover:text-white hover:border-[#1ed661]/40 transition-colors">
+	                  <ArrowLeft size={16} />
+	                  {termBackLabel}
+	                </button>
+	                <Badge label="术语百科" className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30" />
+	              </div>
 
               <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#111923] via-[#0d1117] to-[#0b1510] p-8 md:p-10">
                 <h1 className="text-4xl md:text-5xl font-black mb-4">{currentTerm.term}</h1>
@@ -3488,12 +3608,12 @@ export default function App() {
                 </button>
               </section>
 
-              <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
-                  disabled={!previousTerm}
-                  onClick={() => previousTerm && (window.location.hash = `#/term/${previousTerm.id}`)}
-                  className="text-left p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
+	              <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+	                <button
+	                  disabled={!previousTerm}
+	                  onClick={() => previousTerm && navigateToTermDetail(previousTerm.id, termBackHash)}
+	                  className="text-left p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+	                >
                   <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
                     <ArrowLeft size={13} />
                     上一条
@@ -3501,11 +3621,11 @@ export default function App() {
                   <div className="font-bold text-gray-200 line-clamp-1">{previousTerm?.term || '已经是第一条'}</div>
                 </button>
 
-                <button
-                  disabled={!nextTerm}
-                  onClick={() => nextTerm && (window.location.hash = `#/term/${nextTerm.id}`)}
-                  className="text-left p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
+	                <button
+	                  disabled={!nextTerm}
+	                  onClick={() => nextTerm && navigateToTermDetail(nextTerm.id, termBackHash)}
+	                  className="text-left p-5 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+	                >
                   <div className="text-xs text-gray-500 mb-2 flex items-center justify-end gap-1">
                     下一条
                     <ArrowRight size={13} />
@@ -3516,12 +3636,12 @@ export default function App() {
 
               <section className="space-y-5">
                 <h3 className="text-2xl font-black">相关术语</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {GLOSSARY_DATA.filter((item) => item.id !== currentTerm.id).slice(0, 4).map((item) => (
-                    <button key={item.id} onClick={() => (window.location.hash = `#/term/${item.id}`)} className="text-left p-4 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors">
-                      <div className="text-sm font-black text-[#1ed661] mb-1">{item.term}</div>
-                      <p className="text-xs text-gray-400 line-clamp-3 leading-6">{item.definition}</p>
-                    </button>
+	                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+	                  {GLOSSARY_DATA.filter((item) => item.id !== currentTerm.id).slice(0, 4).map((item) => (
+	                    <button key={item.id} onClick={() => navigateToTermDetail(item.id, termBackHash)} className="text-left p-4 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors">
+	                      <div className="text-sm font-black text-[#1ed661] mb-1">{item.term}</div>
+	                      <p className="text-xs text-gray-400 line-clamp-3 leading-6">{item.definition}</p>
+	                    </button>
                   ))}
                 </div>
               </section>
@@ -3593,7 +3713,7 @@ export default function App() {
                         {searchFlashResults.map((item, idx, arr) => {
                           const prev = idx > 0 ? arr[idx - 1] : null;
                           const showDate = !prev || prev.date !== item.date;
-                          return <TimelineItem key={item.id} item={item} showDate={showDate} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />;
+                          return <TimelineItem key={item.id} item={item} showDate={showDate} onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/search')} />;
                         })}
                       </div>
                     ) : (
@@ -3606,7 +3726,7 @@ export default function App() {
                     {searchArticleResults.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {searchArticleResults.map((item) => (
-                          <ArticleCard key={item.id} item={item} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />
+                          <ArticleCard key={item.id} item={item} onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/search')} />
                         ))}
                       </div>
                     ) : (
@@ -3619,7 +3739,7 @@ export default function App() {
                     {searchTutorialResults.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {searchTutorialResults.map((item) => (
-                          <ArticleCard key={item.id} item={item} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />
+                          <ArticleCard key={item.id} item={item} onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/search')} />
                         ))}
                       </div>
                     ) : (
@@ -3632,7 +3752,7 @@ export default function App() {
                     {searchTermResults.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {searchTermResults.map((item) => (
-                          <Card key={item.id} className="h-full p-6" onClick={() => (window.location.hash = `#/term/${item.id}`)}>
+                          <Card key={item.id} className="h-full p-6" onClick={() => navigateToTermDetail(item.id, window.location.hash || '#/search')}>
                             <div className="mb-3 flex items-center gap-2 flex-wrap">
                               <Badge label="术语百科" className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30" />
                               {item.topicTags.slice(0, 2).map((tag) => (
@@ -3706,7 +3826,7 @@ export default function App() {
                       {searchFlashResults.map((item, idx, arr) => {
                         const prev = idx > 0 ? arr[idx - 1] : null;
                         const showDate = !prev || prev.date !== item.date;
-                        return <TimelineItem key={item.id} item={item} showDate={showDate} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />;
+                        return <TimelineItem key={item.id} item={item} showDate={showDate} onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/search')} />;
                       })}
                     </div>
                   ) : (
@@ -3721,7 +3841,7 @@ export default function App() {
                   {searchArticleResults.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {searchArticleResults.map((item) => (
-                        <ArticleCard key={item.id} item={item} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />
+                        <ArticleCard key={item.id} item={item} onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/search')} />
                       ))}
                     </div>
                   ) : (
@@ -3736,7 +3856,7 @@ export default function App() {
                   {searchTutorialResults.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {searchTutorialResults.map((item) => (
-                        <ArticleCard key={item.id} item={item} onClick={() => (window.location.hash = `#/detail/${item.slug}`)} />
+                        <ArticleCard key={item.id} item={item} onClick={() => openNewsDetailInNewTab(item.slug, window.location.hash || '#/search')} />
                       ))}
                     </div>
                   ) : (
@@ -3751,7 +3871,7 @@ export default function App() {
                   {searchTermResults.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {searchTermResults.map((item) => (
-                        <Card key={item.id} className="h-full p-6" onClick={() => (window.location.hash = `#/term/${item.id}`)}>
+                        <Card key={item.id} className="h-full p-6" onClick={() => navigateToTermDetail(item.id, window.location.hash || '#/search')}>
                           <div className="mb-3 flex items-center gap-2 flex-wrap">
                             <Badge label="术语百科" className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30" />
                             {item.topicTags.slice(0, 2).map((tag) => (
