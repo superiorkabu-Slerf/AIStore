@@ -2435,7 +2435,7 @@ export default function App() {
             <div className="w-10 h-10 bg-[#1ed661] rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(30,214,97,0.4)] group-hover:scale-110 transition-transform">
               <TrendingUp className="text-black w-6 h-6" />
             </div>
-            <span className="text-2xl font-black tracking-tighter uppercase">AISTORE <span className="text-[#1ed661]">资讯</span></span>
+            <span className="text-2xl font-black tracking-tighter uppercase">AISTORE TEST<span className="text-[#1ed661]">资讯</span></span>
           </div>
 
           <nav className="hidden md:flex items-center gap-8">
