@@ -148,6 +148,7 @@ type LearningPathDay = {
   summary: string;
   highlights: string[];
   deliverable: string;
+  learners: number;
   targetHash: string;
 };
 
@@ -160,6 +161,7 @@ const LEARNING_PATH_7D: LearningPathDay[] = [
     summary: '快速建立模型、Token、上下文窗口与推理成本的统一认知。',
     highlights: ['阅读 2 篇入门文章', '完成术语百科 5 个核心词条'],
     deliverable: '一页术语速记卡 + 模型能力对照表',
+    learners: 26341,
     targetHash: '#/list?tab=knowledge'
   },
   {
@@ -170,6 +172,7 @@ const LEARNING_PATH_7D: LearningPathDay[] = [
     summary: '围绕结构化输出、角色设定和约束条件，形成可复用模板。',
     highlights: ['拆解 3 种提示结构', '完成 1 组多轮提示实验'],
     deliverable: 'Prompt 模板库 v1（3-5 条）',
+    learners: 21908,
     targetHash: '#/list?tab=tutorial'
   },
   {
@@ -180,6 +183,7 @@ const LEARNING_PATH_7D: LearningPathDay[] = [
     summary: '把检索、生成、校验串成一条可执行流程，形成基础自动化。',
     highlights: ['配置 1 条内容工作流', '增加结果校验步骤'],
     deliverable: '可复用工作流草图 + 参数说明',
+    learners: 18452,
     targetHash: '#/list?tab=article'
   },
   {
@@ -190,6 +194,7 @@ const LEARNING_PATH_7D: LearningPathDay[] = [
     summary: '理解微调边界与评测指标，避免只看单一分数做决策。',
     highlights: ['跑通 1 次微调演示', '记录成本/效果变化'],
     deliverable: '评测记录表 + 调参备忘',
+    learners: 17630,
     targetHash: '#/list?tab=tutorial'
   },
   {
@@ -200,6 +205,7 @@ const LEARNING_PATH_7D: LearningPathDay[] = [
     summary: '用任务规划 + 工具路由的方式，提高复杂任务成功率。',
     highlights: ['定义 1 套 Agent 目标', '补充失败回退策略'],
     deliverable: 'Agent 流程图 + 失败兜底清单',
+    learners: 15824,
     targetHash: '#/list?tab=knowledge'
   },
   {
@@ -210,6 +216,7 @@ const LEARNING_PATH_7D: LearningPathDay[] = [
     summary: '把提示注入、数据泄露和版权风险纳入发布前检查。',
     highlights: ['梳理 6 项风险点', '完成 1 版安全策略模板'],
     deliverable: '发布前检查清单 v1',
+    learners: 14203,
     targetHash: '#/list?tab=article'
   },
   {
@@ -220,12 +227,13 @@ const LEARNING_PATH_7D: LearningPathDay[] = [
     summary: '汇总一周产出并构建可复用模板，形成后续迭代基线。',
     highlights: ['整理关键数据与结论', '规划下一阶段目标'],
     deliverable: '学习复盘文档 + 下周迭代计划',
+    learners: 13117,
     targetHash: '#/list?tab=article'
   }
 ];
 
 const SOURCE_FILTER_OPTIONS: Array<{ value: SourceFilter; label: string }> = [
-  { value: 'all', label: '全部来源' },
+  { value: 'all', label: '全部' },
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'openai', label: 'OpenAI' },
   { value: 'meta', label: 'Meta' },
@@ -233,7 +241,7 @@ const SOURCE_FILTER_OPTIONS: Array<{ value: SourceFilter; label: string }> = [
 ];
 
 const THEME_FILTER_OPTIONS: Array<{ value: ThemeFilter; label: string }> = [
-  { value: 'all', label: '全部主题' },
+  { value: 'all', label: '全部' },
   { value: 'model', label: '模型' },
   { value: 'hardware', label: '硬件' },
   { value: 'policy', label: '政策' },
@@ -1835,12 +1843,13 @@ export default function App() {
 
           <div className="h-[500px] bg-white/[0.02] border border-white/5 rounded-3xl p-7 flex flex-col">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-xl font-black flex items-center gap-3">
-                <Clock className="text-[#1ed661]" size={24} />
+              <h3 className="text-xl font-black flex items-center gap-3 text-gray-100">
+                <Clock className="text-gray-100" size={24} />
                 实时快讯
               </h3>
-              <a href="#/list?tab=flash" className="text-xs font-bold text-gray-500 hover:text-[#1ed661] transition-colors">
+              <a href="#/list?tab=flash" className="inline-flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-[#1ed661] transition-colors">
                 查看全部
+                <ArrowRight size={12} />
               </a>
             </div>
             <div className="flex-1 overflow-y-auto pr-1 space-y-2 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#1ed661]/50 hover:[&::-webkit-scrollbar-thumb]:bg-[#1ed661]/70">
@@ -1867,8 +1876,8 @@ export default function App() {
 
         <section className="space-y-6 order-3">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
-            <h3 className="text-2xl font-black flex items-center gap-3">
-              <BookOpen className="text-[#1ed661]" size={28} />
+            <h3 className="text-2xl font-black flex items-center gap-3 text-gray-100">
+              <BookOpen className="text-gray-100" size={28} />
               术语百科
             </h3>
             <div className="flex items-center gap-3">
@@ -1879,7 +1888,10 @@ export default function App() {
               >
                 <RotateCw size={15} />
               </button>
-              <a href="#/list?tab=knowledge" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">查看全部术语</a>
+              <a href="#/list?tab=knowledge" className="inline-flex items-center gap-1 text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">
+                查看全部术语
+                <ArrowRight size={12} />
+              </a>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
@@ -1905,11 +1917,14 @@ export default function App() {
 
         <section className="space-y-7 order-4">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
-            <h3 className="text-2xl font-black flex items-center gap-3">
-              <Film className="text-pink-400" size={26} />
+            <h3 className="text-2xl font-black flex items-center gap-3 text-gray-100">
+              <Film className="text-gray-100" size={26} />
               优质视频
             </h3>
-            <a href="#/list?tab=video" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">查看更多</a>
+            <a href="#/list?tab=video" className="inline-flex items-center gap-1 text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">
+              查看更多
+              <ArrowRight size={12} />
+            </a>
           </div>
           {videoPicks.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-5">
@@ -1970,11 +1985,14 @@ export default function App() {
 
         <section className="space-y-7 order-5">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
-            <h3 className="text-2xl font-black flex items-center gap-3">
-              <Headphones className="text-cyan-400" size={26} />
+            <h3 className="text-2xl font-black flex items-center gap-3 text-gray-100">
+              <Headphones className="text-gray-100" size={26} />
               AI播客
             </h3>
-            <a href="#/list?tab=podcast" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">查看更多</a>
+            <a href="#/list?tab=podcast" className="inline-flex items-center gap-1 text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">
+              查看更多
+              <ArrowRight size={12} />
+            </a>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
             {podcastPicks.map((item) => (
@@ -2023,11 +2041,14 @@ export default function App() {
 
         <section className="space-y-8 order-1">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
-            <h3 className="text-2xl font-black flex items-center gap-3">
-              <TrendingUp className="text-orange-500" size={28} />
+            <h3 className="text-2xl font-black flex items-center gap-3 text-gray-100">
+              <TrendingUp className="text-gray-100" size={28} />
               深度好文
             </h3>
-            <a href="#/list?tab=article" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">查看全部</a>
+            <a href="#/list?tab=article" className="inline-flex items-center gap-1 text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">
+              查看全部
+              <ArrowRight size={12} />
+            </a>
           </div>
           <div className="flex flex-wrap items-center gap-2 -mt-1">
             <span className="text-[11px] uppercase tracking-widest text-gray-500 font-bold mr-1">快捷标签</span>
@@ -2076,32 +2097,14 @@ export default function App() {
 
         <section className="space-y-8 order-2">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
-            <h3 className="text-2xl font-black flex items-center gap-3">
-              <GraduationCap className="text-blue-500" size={28} />
+            <h3 className="text-2xl font-black flex items-center gap-3 text-gray-100">
+              <GraduationCap className="text-gray-100" size={28} />
               教程精选
             </h3>
-            <a href="#/list?tab=tutorial" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">查看全部</a>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <button
-              onClick={() => {
-                window.location.hash = '#/learning-path';
-              }}
-              className="text-left rounded-2xl border border-[#1ed661]/25 bg-gradient-to-br from-[#1ed661]/12 via-[#1ed661]/6 to-transparent p-5 hover:border-[#1ed661]/45 hover:shadow-[0_0_24px_rgba(30,214,97,0.16)] transition-all"
-            >
-              <div className="text-[11px] uppercase tracking-widest font-bold text-[#9ef1bd] mb-2">学习模块</div>
-              <h4 className="text-xl font-black text-white mb-2">7天学习路径</h4>
-              <p className="text-sm text-gray-300 leading-7">按 7 天节奏拆解知识与实操任务，适合系统化入门与进阶复盘。</p>
-              <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[#9ef1bd]">
-                进入学习路径
-                <ArrowRight size={14} />
-              </span>
-            </button>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-              <div className="text-[11px] uppercase tracking-widest font-bold text-gray-500 mb-2">教程文章模块</div>
-              <h4 className="text-xl font-black text-white mb-2">纯教程文章</h4>
-              <p className="text-sm text-gray-400 leading-7">下方教程内容保持卡片浏览，支持标签快捷筛选，便于按主题快速查找。</p>
-            </div>
+            <a href="#/list?tab=tutorial" className="inline-flex items-center gap-1 text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">
+              查看全部
+              <ArrowRight size={12} />
+            </a>
           </div>
           <div className="flex flex-wrap items-center gap-2 -mt-1">
             <span className="text-[11px] uppercase tracking-widest text-gray-500 font-bold mr-1">快捷标签</span>
@@ -2153,8 +2156,8 @@ export default function App() {
 
         <section className="space-y-8 order-6">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
-            <h3 className="text-2xl font-black flex items-center gap-3">
-              <Star className="text-yellow-500" size={28} />
+            <h3 className="text-2xl font-black flex items-center gap-3 text-gray-100">
+              <Star className="text-gray-100" size={28} />
               推荐工具
             </h3>
           </div>
@@ -2176,6 +2179,67 @@ export default function App() {
             ))}
           </div>
         </section>
+
+        <section className="order-7 rounded-3xl border border-white/10 bg-gradient-to-br from-[#101822] via-[#0d1117] to-[#12271b] px-6 py-10 md:px-10 md:py-12">
+          <div className="max-w-4xl mx-auto text-center space-y-5">
+            <h3 className="text-3xl md:text-4xl font-black leading-tight">
+              每日5分钟，掌握 <span className="text-[#4aa3ff]">AI行业关键动态</span>
+            </h3>
+            <p className="text-gray-400 text-base md:text-lg">加入 28,000+ 专业人士的 AI 情报网络</p>
+            <form className="max-w-3xl mx-auto">
+              <div className="flex flex-col sm:flex-row rounded-xl border border-white/10 overflow-hidden bg-white/[0.03]">
+                <input
+                  type="email"
+                  placeholder="您的邮箱地址"
+                  className="h-12 flex-1 bg-transparent px-4 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  className="h-12 px-6 bg-[#1ed661] text-black font-black text-sm hover:brightness-110 transition-colors"
+                >
+                  免费订阅
+                </button>
+              </div>
+              <p className="mt-3 text-xs text-gray-500 text-left">
+                提交邮箱即表示您同意我们的服务条款与隐私政策。
+              </p>
+            </form>
+          </div>
+        </section>
+
+        <section className="order-8 space-y-8 rounded-3xl border border-white/10 bg-white/[0.02] p-6 md:p-10">
+          <div className="text-center space-y-3">
+            <h3 className="text-3xl md:text-4xl font-black">为什么选择AI STORE?</h3>
+            <p className="text-gray-400">我们聚焦有价值的 AI 资讯与实战内容，帮助你高效建立认知和行动路径。</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[
+              {
+                title: 'AI热门资讯',
+                desc: '精选全球动态与热点事件，第一时间掌握行业趋势。',
+                icon: TrendingUp
+              },
+              {
+                title: '每日快讯',
+                desc: '结构化梳理核心变化，5 分钟完成高效信息摄入。',
+                icon: Newspaper
+              },
+              {
+                title: 'AI工具推荐',
+                desc: '聚合实用工具与场景方案，提高工作效率与产出质量。',
+                icon: Star
+              }
+            ].map((item) => (
+              <article key={item.title} className="rounded-2xl border border-white/10 bg-[#111a25]/70 p-5">
+                <div className="w-12 h-12 rounded-xl border border-white/10 bg-white/[0.04] grid place-items-center mb-4 text-gray-100">
+                  <item.icon size={22} />
+                </div>
+                <h4 className="text-xl font-black mb-2">{item.title}</h4>
+                <p className="text-sm text-gray-400 leading-7">{item.desc}</p>
+              </article>
+            ))}
+          </div>
+        </section>
       </motion.div>
     );
   };
@@ -2184,38 +2248,43 @@ export default function App() {
     const tutorialSamples = allNews.filter((item) => item.type === 'tutorial').slice(0, 4);
 
     return (
-      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} className="space-y-8">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <button
-            onClick={() => {
-              window.location.hash = '#/portal';
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm text-gray-300 hover:text-white hover:border-[#1ed661]/40 transition-colors"
-          >
-            <ArrowLeft size={16} />
-            返回AI百科
-          </button>
-          <a href="#/list?tab=tutorial" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">
-            查看教程文章
-          </a>
-        </div>
+      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }} className="space-y-6">
+        <button
+          onClick={() => {
+            window.location.hash = '#/portal';
+          }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm text-gray-300 hover:text-white hover:border-[#1ed661]/40 transition-colors"
+        >
+          <ArrowLeft size={16} />
+          返回AI百科
+        </button>
 
-        <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#111923] via-[#0d1117] to-[#0b1510] p-8 md:p-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#1ed661]/30 bg-[#1ed661]/10 text-[#9ef1bd] text-[11px] font-black uppercase tracking-widest mb-4">
-            <Zap size={13} />
-            学习模块
+        <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#111923] via-[#0d1117] to-[#0b1510] p-6 md:p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_0.7fr] gap-6 items-center">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#1ed661]/30 bg-[#1ed661]/10 text-[#9ef1bd] text-[11px] font-black uppercase tracking-widest">
+                <Zap size={13} />
+                学习模块
+              </div>
+              <h1 className="text-3xl md:text-4xl font-black">7天学习路径</h1>
+              <p className="text-base md:text-lg text-gray-300 leading-8">
+                把术语认知、教程实操与深度阅读组合成 7 天闭环。每天给出目标、关键动作和交付结果，便于按节奏推进。
+              </p>
+            </div>
+            <div className="h-48 md:h-56 rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_20%_20%,rgba(30,214,97,0.28),transparent_35%),radial-gradient(circle_at_80%_70%,rgba(74,163,255,0.22),transparent_35%),linear-gradient(135deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))]" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-black mb-4">7天学习路径</h1>
-          <p className="text-base md:text-lg text-gray-300 max-w-3xl leading-8">
-            把术语认知、教程实操与深度阅读组合成 7 天闭环。每天给出目标、关键动作和交付结果，便于按节奏推进。
-          </p>
         </section>
 
         <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {LEARNING_PATH_7D.map((day) => (
+          {LEARNING_PATH_7D.map((day, idx) => (
             <article
               key={day.id}
-              className="relative rounded-2xl border border-white/10 bg-gradient-to-br from-[#111923]/95 via-[#0f1620]/95 to-[#0d1117]/95 p-5 hover:border-[#1ed661]/35 hover:shadow-[0_0_24px_rgba(30,214,97,0.08)] transition-all"
+              className={cn(
+                'relative rounded-2xl border border-white/10 bg-gradient-to-br from-[#111923]/95 via-[#0f1620]/95 to-[#0d1117]/95 p-5 transition-all',
+                idx === 0
+                  ? 'border-[#1ed661]/45 shadow-[0_0_26px_rgba(30,214,97,0.18)]'
+                  : 'hover:border-[#1ed661]/35 hover:shadow-[0_0_24px_rgba(30,214,97,0.08)]'
+              )}
             >
               <div className="flex items-center justify-between gap-2 mb-3">
                 <span className="text-[10px] px-2 py-1 rounded-full border border-[#1ed661]/30 bg-[#1ed661]/10 text-[#9ef1bd] font-black tracking-widest">
@@ -2233,12 +2302,15 @@ export default function App() {
                   </li>
                 ))}
               </ul>
-              <p className="text-[11px] text-gray-500 mb-4 line-clamp-2">交付成果：{day.deliverable}</p>
+              <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
+                <span>{day.learners.toLocaleString()} 人已学习</span>
+                <span className="text-gray-500 line-clamp-1">交付成果：{day.deliverable}</span>
+              </div>
               <a
                 href={day.targetHash}
-                className="inline-flex items-center gap-1 text-xs text-[#9ef1bd] hover:text-[#1ed661] transition-colors font-semibold"
+                className="inline-flex items-center gap-1 text-sm text-[#9ef1bd] hover:text-[#1ed661] transition-colors font-semibold"
               >
-                查看相关内容
+                查看学习详情
                 <ArrowRight size={12} />
               </a>
             </article>
@@ -2247,12 +2319,13 @@ export default function App() {
 
         <section className="space-y-5">
           <div className="flex items-center justify-between border-b border-white/5 pb-4">
-            <h3 className="text-2xl font-black flex items-center gap-3">
-              <GraduationCap className="text-blue-500" size={26} />
+            <h3 className="text-2xl font-black flex items-center gap-3 text-gray-100">
+              <GraduationCap className="text-gray-100" size={26} />
               配套教程文章
             </h3>
-            <a href="#/list?tab=tutorial" className="text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">
+            <a href="#/list?tab=tutorial" className="inline-flex items-center gap-1 text-xs text-gray-500 font-bold uppercase tracking-widest hover:text-[#1ed661] transition-colors">
               查看更多
+              <ArrowRight size={12} />
             </a>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -2359,15 +2432,16 @@ export default function App() {
           ) : view === 'learning_path' ? (
             renderLearningPath()
           ) : view === 'list' ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div className="mb-8 text-center">
-                <h1 className="text-4xl md:text-5xl font-black mb-4 tracking-tight">资讯列表</h1>
-                <p className="text-base text-gray-400 max-w-4xl mx-auto">从聚合页进入，按分类浏览 AI快讯、深度好文、精选教程、术语百科、优质视频和 AI播客。</p>
-              </div>
-
-              <div className="sticky top-24 z-40 mb-8 border-b border-white/10 pb-4 backdrop-blur-md bg-[#0d1117]/85">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-6 overflow-x-auto no-scrollbar">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="news-list-page">
+              <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-10 items-start">
+                <motion.div
+                  key={`${listTab}-${flashViewMode}-${contentLayoutMode}-${contentTopicFilter}-${contentSourceFilter}-${contentThemeFilter}-${contentSort}-${contentDateRange}-${searchQuery}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.22, ease: 'easeOut' }}
+                  className="min-w-0 space-y-6"
+                >
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 border-b border-white/10 pb-3">
                     {[
                       { id: 'flash', label: 'AI快讯' },
                       { id: 'article', label: '深度好文' },
@@ -2380,10 +2454,10 @@ export default function App() {
                         key={tab.id}
                         onClick={() => goToListTab(tab.id as ListTab)}
                         className={cn(
-                          'pb-2 border-b-2 text-xl md:text-2xl leading-none font-bold transition-colors whitespace-nowrap',
+                          'text-sm md:text-base font-semibold tracking-tight transition-colors',
                           listTab === tab.id
-                            ? 'border-[#1ed661] text-[#22c55e]'
-                            : 'border-transparent text-[#8e96a7] hover:text-[#d0d6e2]'
+                            ? 'text-[#1ed661]'
+                            : 'text-gray-400 hover:text-gray-100'
                         )}
                       >
                         {tab.label}
@@ -2391,194 +2465,6 @@ export default function App() {
                     ))}
                   </div>
 
-                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 px-1">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500 font-semibold">分类</span>
-                        <select
-                          value={listTab === 'flash' ? flashCategoryFilter : contentTopicFilter}
-                          onChange={(e) => {
-                            if (listTab === 'flash') {
-                              setFlashCategoryFilter(e.target.value);
-                              return;
-                            }
-                            setContentTopicFilter(e.target.value);
-                          }}
-                          className="h-10 rounded-xl bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors"
-                        >
-                          {(listTab === 'flash' ? flashCategoryOptions : listTopicOptions).map((topic) => (
-                            <option key={topic} value={topic}>
-                              {topic}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500 font-semibold">时间</span>
-                        <select
-                          value={contentDateRange}
-                          onChange={(e) => setContentDateRange(e.target.value as ContentDateRange)}
-                          className="h-10 rounded-xl bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors"
-                        >
-                          <option value="all">全部时间</option>
-                          <option value="3d">近3天</option>
-                          <option value="7d">近7天</option>
-                          <option value="30d">近30天</option>
-                        </select>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500 font-semibold">来源</span>
-                        <select
-                          value={contentSourceFilter}
-                          onChange={(e) => setContentSourceFilter(e.target.value as SourceFilter)}
-                          disabled={listTab === 'knowledge'}
-                          className={cn(
-                            'h-10 rounded-xl bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors',
-                            listTab === 'knowledge' && 'opacity-45 cursor-not-allowed'
-                          )}
-                        >
-                          {SOURCE_FILTER_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500 font-semibold">主题</span>
-                        <select
-                          value={contentThemeFilter}
-                          onChange={(e) => setContentThemeFilter(e.target.value as ThemeFilter)}
-                          disabled={listTab === 'knowledge'}
-                          className={cn(
-                            'h-10 rounded-xl bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors',
-                            listTab === 'knowledge' && 'opacity-45 cursor-not-allowed'
-                          )}
-                        >
-                          {THEME_FILTER_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500 font-semibold">排序</span>
-                        <select
-                          value={contentSort}
-                          onChange={(e) => setContentSort(e.target.value as ContentSort)}
-                          className="h-10 rounded-xl bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors"
-                        >
-                          <option value="hot">热度优先</option>
-                          <option value="latest">最新发布</option>
-                          <option value="most_read">阅读最多</option>
-                        </select>
-                      </div>
-
-                      <div className="flex items-center gap-1 pl-1">
-                        {listTab === 'flash' ? (
-                          <>
-                            <button
-                              onClick={() => setFlashViewMode('compact')}
-                              className={cn(
-                                'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
-                                flashViewMode === 'compact'
-                                  ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
-                                  : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
-                              )}
-                              aria-label="极简快讯"
-                              title="极简快讯"
-                            >
-                              <AlignJustify size={15} />
-                            </button>
-                            <button
-                              onClick={() => setFlashViewMode('detail')}
-                              className={cn(
-                                'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
-                                flashViewMode === 'detail'
-                                  ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
-                                  : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
-                              )}
-                              aria-label="详情快讯"
-                              title="详情快讯"
-                            >
-                              <List size={15} />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => setContentLayoutMode('list')}
-                              className={cn(
-                                'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
-                                contentLayoutMode === 'list'
-                                  ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
-                                  : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
-                              )}
-                              aria-label="列表视图"
-                              title="列表视图"
-                            >
-                              <AlignJustify size={15} />
-                            </button>
-                            <button
-                              onClick={() => setContentLayoutMode('card')}
-                              className={cn(
-                                'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
-                                contentLayoutMode === 'card'
-                                  ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
-                                  : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
-                              )}
-                              aria-label="卡片视图"
-                              title="卡片视图"
-                            >
-                              <LayoutGrid size={15} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      {listTab === 'flash' && (
-                        <span className="text-xs text-gray-500 whitespace-nowrap">最后更新：刚刚</span>
-                      )}
-                      <form onSubmit={handleSearch} className="relative">
-                        <input
-                          type="text"
-                          placeholder={
-                            listTab === 'flash'
-                              ? '搜索快讯...'
-                              : listTab === 'video'
-                                ? '搜索视频...'
-                                : listTab === 'podcast'
-                                  ? '搜索播客...'
-                                  : '搜索文章...'
-                          }
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="h-11 w-[300px] bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 rounded-xl pl-10 pr-10 text-sm text-gray-100 focus:outline-none focus:border-[#1ed661]/50 transition-colors"
-                        />
-                        <Search size={15} strokeWidth={1.4} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                        <button
-                          type="submit"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg bg-[#1ed661] text-black grid place-items-center hover:brightness-110"
-                          aria-label="搜索"
-                        >
-                          <Search size={14} />
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
-                <div>
                   {listTab === 'flash' && (
                     filteredFlashItems.length > 0 ? (
                       flashViewMode === 'detail' ? (
@@ -2792,10 +2678,178 @@ export default function App() {
                       <p className="text-sm text-gray-500 py-12">当前筛选条件下暂无 AI播客。</p>
                     )
                   )}
-                </div>
+                </motion.div>
 
-                <aside className="xl:sticky xl:top-32">
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                <aside className="xl:sticky xl:top-24 space-y-4">
+                  <form onSubmit={handleSearch} className="relative">
+                    <input
+                      type="text"
+                      placeholder={
+                        listTab === 'flash'
+                          ? '搜索快讯...'
+                          : listTab === 'video'
+                            ? '搜索视频...'
+                            : listTab === 'podcast'
+                              ? '搜索播客...'
+                              : '搜索文章...'
+                      }
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="h-11 w-full bg-white/[0.04] border border-white/10 rounded-xl pl-10 pr-10 text-sm text-gray-100 focus:outline-none focus:border-[#1ed661]/40 transition-colors"
+                    />
+                    <Search size={15} strokeWidth={1.4} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                    <button
+                      type="submit"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-lg bg-[#1ed661] text-black grid place-items-center hover:brightness-110"
+                      aria-label="搜索"
+                    >
+                      <Search size={14} />
+                    </button>
+                  </form>
+
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <AlignJustify size={14} className="text-gray-500 flex-shrink-0" />
+                        <select
+                          value={listTab === 'flash' ? flashCategoryFilter : contentTopicFilter}
+                          onChange={(e) => {
+                            if (listTab === 'flash') {
+                              setFlashCategoryFilter(e.target.value);
+                              return;
+                            }
+                            setContentTopicFilter(e.target.value);
+                          }}
+                          className="h-9 flex-1 rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors"
+                        >
+                          {(listTab === 'flash' ? flashCategoryOptions : listTopicOptions).map((topic) => (
+                            <option key={topic} value={topic}>
+                              {topic}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <CalendarDays size={14} className="text-gray-500 flex-shrink-0" />
+                        <select
+                          value={contentDateRange}
+                          onChange={(e) => setContentDateRange(e.target.value as ContentDateRange)}
+                          className="h-9 flex-1 rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors"
+                        >
+                          <option value="all">全部时间</option>
+                          <option value="3d">近3天</option>
+                          <option value="7d">近7天</option>
+                          <option value="30d">近30天</option>
+                        </select>
+                      </div>
+
+                      {listTab !== 'knowledge' && (
+                        <div className="flex items-center gap-2">
+                          <ExternalLink size={14} className="text-gray-500 flex-shrink-0" />
+                          <select
+                            value={contentSourceFilter}
+                            onChange={(e) => setContentSourceFilter(e.target.value as SourceFilter)}
+                            className="h-9 flex-1 rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors"
+                          >
+                            {SOURCE_FILTER_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <BookOpen size={14} className="text-gray-500 flex-shrink-0" />
+                        <select
+                          value={contentThemeFilter}
+                          onChange={(e) => setContentThemeFilter(e.target.value as ThemeFilter)}
+                          className="h-9 flex-1 rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors"
+                        >
+                          {THEME_FILTER_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <List size={14} className="text-gray-500 flex-shrink-0" />
+                        <select
+                          value={contentSort}
+                          onChange={(e) => setContentSort(e.target.value as ContentSort)}
+                          className="h-9 flex-1 rounded-lg bg-[#f9f9f9]/5 border border-transparent hover:border-white/20 px-3 text-sm text-gray-200 focus:outline-none focus:border-[#1ed661]/45 transition-colors"
+                        >
+                          <option value="hot">热度优先</option>
+                          <option value="latest">最新发布</option>
+                          <option value="most_read">阅读最多</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        {(listTab === 'flash' ? (
+                          <>
+                            <button
+                              onClick={() => setFlashViewMode('compact')}
+                              className={cn(
+                                'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
+                                flashViewMode === 'compact'
+                                  ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
+                                  : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
+                              )}
+                              aria-label="极简快讯"
+                            >
+                              <AlignJustify size={15} />
+                            </button>
+                            <button
+                              onClick={() => setFlashViewMode('detail')}
+                              className={cn(
+                                'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
+                                flashViewMode === 'detail'
+                                  ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
+                                  : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
+                              )}
+                              aria-label="详情快讯"
+                            >
+                              <List size={15} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => setContentLayoutMode('list')}
+                              className={cn(
+                                'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
+                                contentLayoutMode === 'list'
+                                  ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
+                                  : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
+                              )}
+                              aria-label="列表视图"
+                            >
+                              <AlignJustify size={15} />
+                            </button>
+                            <button
+                              onClick={() => setContentLayoutMode('card')}
+                              className={cn(
+                                'w-9 h-9 rounded-lg border grid place-items-center transition-colors',
+                                contentLayoutMode === 'card'
+                                  ? 'border-[#1ed661]/45 bg-[#1ed661]/15 text-[#9ef1bd]'
+                                  : 'border-white/10 bg-white/[0.02] text-gray-400 hover:text-gray-200 hover:border-white/20'
+                              )}
+                              aria-label="卡片视图"
+                            >
+                              <LayoutGrid size={15} />
+                            </button>
+                          </>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                     <h3 className="text-2xl font-black flex items-center gap-2">
                       <Flame size={20} className="text-orange-400" />
                       24小时热搜
@@ -2824,22 +2878,28 @@ export default function App() {
                       ))}
                     </ol>
                   </div>
+
+                  {listTab === 'tutorial' && (
+                    <button
+                      onClick={() => (window.location.hash = '#/learning-path')}
+                      className="w-full text-left rounded-2xl border border-[#1ed661]/30 bg-gradient-to-br from-[#1ed661]/16 via-[#1ed661]/8 to-transparent px-5 py-6 hover:border-[#1ed661]/45 hover:shadow-[0_0_24px_rgba(30,214,97,0.16)] transition-all"
+                    >
+                      <div className="text-[11px] font-black uppercase tracking-widest text-[#9ef1bd] mb-2">学习模块</div>
+                      <h4 className="text-lg font-black text-white mb-2">OpenClaw7天学习路径</h4>
+                      <p className="text-sm text-gray-300 leading-7 mb-3">7 天系统学习 + 实操任务闭环，已有 26,341 人完成学习打卡。</p>
+                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-[#9ef1bd]">
+                        立即查看
+                        <ArrowRight size={13} />
+                      </span>
+                    </button>
+                  )}
                 </aside>
               </div>
             </motion.div>
           ) : view === 'section' ? (
             renderSection(currentSectionKey)
           ) : view === 'detail' && currentNews ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-5xl mx-auto py-8 space-y-10">
-              <div className="sticky top-20 z-30">
-                <div className="h-[2px] w-full rounded-full bg-white/10 overflow-hidden">
-                  <div
-                    className="h-full bg-[#1ed661] shadow-[0_0_12px_#1ed661] transition-[width] duration-200"
-                    style={{ width: `${articleReadProgress}%` }}
-                  />
-                </div>
-              </div>
-
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-5xl mx-auto pt-2 pb-8 space-y-8">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <button onClick={() => (window.location.hash = '#/portal')} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-sm text-gray-300 hover:text-white hover:border-[#1ed661]/40 transition-colors">
@@ -2861,7 +2921,7 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#111923] via-[#0d1117] to-[#0b1510] p-8 md:p-10">
+              <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#16263d]/85 via-[#122238]/78 to-[#103223]/72 p-8 md:p-10">
                 <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-white mb-6 leading-[1.3] tracking-tight break-words">
                   {currentNews.title}
                 </h1>

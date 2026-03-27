@@ -1,10 +1,10 @@
 import React from 'react';
-import { Calendar, Flame } from 'lucide-react';
+import { Calendar, CalendarDays, Clock3, Flame } from 'lucide-react';
 import { NewsItem } from '../types';
 import { Card, Badge } from './Common';
 import { cn } from '../lib/utils';
 
-export const TimelineItem: React.FC<{ item: NewsItem; showDate: boolean; onClick: () => void }> = ({ item, showDate, onClick }) => (
+export const TimelineItem: React.FC<{ item: NewsItem; showDate: boolean; onClick: () => void; isCurrent?: boolean }> = ({ item, showDate, onClick, isCurrent = false }) => (
   <div className="relative group cursor-pointer" onClick={onClick}>
     {showDate && (
       <div className="flex items-center gap-2 mb-6 mt-8 first:mt-0">
@@ -16,29 +16,41 @@ export const TimelineItem: React.FC<{ item: NewsItem; showDate: boolean; onClick
       </div>
     )}
     <div className="relative pl-12 pb-12">
-      <div className="absolute left-[19px] top-0 bottom-0 w-[2px] bg-gradient-to-b from-[#1ed661] to-transparent opacity-20 border-l-2 border-dashed border-[#1ed661]" />
+      <div className="absolute left-[19px] top-0 bottom-0 w-[1px] bg-white/10" />
       <div className="absolute left-0 top-2 w-10 h-10 flex items-center justify-center">
-        <div className="w-3 h-3 bg-[#1ed661] rounded-full shadow-[0_0_15px_#1ed661] group-hover:scale-125 transition-transform" />
+        <div
+          className={cn(
+            'w-2.5 h-2.5 rounded-full transition-transform group-hover:scale-125',
+            isCurrent ? 'bg-[#1ed661] shadow-[0_0_12px_#1ed661]' : 'bg-white/25'
+          )}
+        />
       </div>
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <span className="text-xl font-black text-[#1ed661]">{item.exactTime}</span>
-            <Badge label={item.categoryTag} />
-          </div>
+      <Card className="p-6 border border-white/10 bg-white/[0.03] backdrop-blur-[10px] hover:border-[#1ed661]/30">
+        <div className="flex items-center justify-between mb-3">
+          <Badge label={item.categoryTag} />
           <div className="flex items-center gap-1 text-[10px] font-bold text-orange-400">
             <Flame size={12} fill="currentColor" />
             {item.importance}
           </div>
         </div>
-        <h3 className="text-xl font-bold mb-3 group-hover:text-[#1ed661] transition-colors leading-snug">{item.title}</h3>
-        <p className="text-sm text-gray-400 line-clamp-2">{item.summary}</p>
+        <h3 className="text-2xl font-semibold mb-3 group-hover:text-[#1ed661] transition-colors leading-[1.5]">{item.title}</h3>
+        <p className="text-sm text-white/60 line-clamp-2 leading-[1.7]">{item.summary}</p>
+        <div className="mt-3 inline-flex items-center gap-1.5 text-[12px] text-white/45">
+          <Clock3 size={12} />
+          <span>{item.exactTime}</span>
+        </div>
       </Card>
     </div>
   </div>
 );
 
-export const ArticleCard: React.FC<{ item: NewsItem; onClick: () => void; compact?: boolean; className?: string }> = ({ item, onClick, compact = false, className = '' }) => (
+export const ArticleCard: React.FC<{
+  item: NewsItem;
+  onClick: () => void;
+  compact?: boolean;
+  className?: string;
+  variant?: 'default' | 'learning';
+}> = ({ item, onClick, compact = false, className = '', variant = 'default' }) => (
   (() => {
     const tutorialLevel =
       item.type === 'tutorial'
@@ -54,6 +66,45 @@ export const ArticleCard: React.FC<{ item: NewsItem; onClick: () => void; compac
         : tutorialLevel === '进阶'
           ? 'bg-cyan-500/15 text-cyan-300 border-cyan-400/35'
           : 'bg-lime-500/15 text-lime-300 border-lime-400/35';
+
+    if (variant === 'learning') {
+      return (
+        <button className={cn("article-card group w-full h-full text-left flex flex-col overflow-hidden", className)} onClick={onClick}>
+          <div className="article-cover">
+            <img
+              src={item.cover}
+              alt={item.title}
+              className="w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-700"
+              referrerPolicy="no-referrer"
+            />
+            <div className="article-pill-row">
+              <span className="article-pill">{item.categoryTag}</span>
+              {tutorialLevel && <span className="article-pill">{tutorialLevel}</span>}
+            </div>
+          </div>
+          <div className="article-body">
+            <h3 className="article-title line-clamp-2">{item.title}</h3>
+            <div className="article-data-bar">
+              <div className="article-data-item">
+                <span className="article-data-label">日期</span>
+                <span className="article-data-value">
+                  <CalendarDays size={14} className="lp-icon" />
+                  {item.date}
+                </span>
+              </div>
+              <div className="article-data-item">
+                <span className="article-data-label">热度</span>
+                <span className="article-data-value">
+                  <Flame size={14} className="lp-icon" />
+                  {item.importance}
+                </span>
+              </div>
+            </div>
+            <p className="article-summary line-clamp-3">{item.summary}</p>
+          </div>
+        </button>
+      );
+    }
 
     return (
       <Card className={cn("group cursor-pointer flex flex-col h-full overflow-hidden relative", className)} onClick={onClick}>
@@ -82,8 +133,8 @@ export const ArticleCard: React.FC<{ item: NewsItem; onClick: () => void; compac
               {item.importance}
             </div>
           </div>
-          <h3 className={cn("font-bold mb-3 line-clamp-2 group-hover:text-[#1ed661] transition-colors leading-snug", compact ? "text-base md:text-lg" : "text-base md:text-lg")}>{item.title}</h3>
-          <p className={cn("text-sm text-gray-400 leading-relaxed", compact ? "line-clamp-2" : "line-clamp-3")}>{item.summary}</p>
+          <h3 className={cn("font-semibold mb-3 line-clamp-2 group-hover:text-[#1ed661] transition-colors leading-[1.6]", compact ? "text-base md:text-lg" : "text-base md:text-lg")}>{item.title}</h3>
+          <p className={cn("text-sm text-white/60 leading-[1.6]", compact ? "line-clamp-2" : "line-clamp-3")}>{item.summary}</p>
         </div>
       </Card>
     );
