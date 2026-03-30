@@ -1,0 +1,612 @@
+import { Provider, Model, Prompt, Scenario, TrendEvent } from './types';
+
+export const providers: Provider[] = [
+  {
+    id: "openai",
+    name: "OpenAI",
+    logo: "https://cdn.simpleicons.org/openai/white",
+    description: "全球领先的人工智能研究实验室，GPT 系列模型开发者。",
+    positioningSummary: "适合追求综合能力和成熟生态的团队，旗舰模型能力强，但整体价格偏高。",
+    region: "美国",
+    compliance: "海外",
+    funding: "超 $130 亿融资",
+    website: "https://openai.com",
+    modelCount: 8,
+    matrix: ["gpt-4o", "gpt-4o-mini", "o1"],
+    capabilityTags: ["多模态", "复杂推理", "长文本", "函数调用"],
+    timeline: [
+      { date: "2024-12-17", event: "发布 o1 推理模型", type: "release", details: "首个具有强化学习推理能力的模型，在数学和编程竞赛中表现卓越。" },
+      { date: "2024-05-13", event: "发布 GPT-4o 多模态模型", type: "release", details: "原生多模态模型，支持实时语音、视觉和文本交互。" }
+    ]
+  },
+  {
+    id: "anthropic",
+    name: "Anthropic",
+    logo: "https://cdn.simpleicons.org/anthropic/white",
+    description: "专注 AI 安全的研究公司，Claude 系列模型开发者。",
+    positioningSummary: "适合重视稳定文本能力与长文本处理的团队，价格中高，偏企业应用。",
+    region: "美国",
+    compliance: "海外",
+    funding: "超 $70 亿融资",
+    website: "https://anthropic.com",
+    modelCount: 5,
+    matrix: ["claude-3-5-sonnet"],
+    capabilityTags: ["长文本", "代码生成", "文档分析"],
+    timeline: [
+      { date: "2024-06-20", event: "发布 Claude 3.5 Sonnet", type: "release", details: "在多项基准测试中超越 GPT-4o，且速度提升 2 倍。" }
+    ]
+  },
+  {
+    id: "deepseek",
+    name: "DeepSeek（深度求索）",
+    logo: "https://cdn.simpleicons.org/deepseek/white",
+    description: "国产开源大模型领军企业，以极致性价比著称。",
+    positioningSummary: "适合预算敏感的文本任务，在成本和推理能力上具有较高性价比。",
+    region: "中国",
+    compliance: "国内已备案",
+    funding: "幻方量化孵化",
+    website: "https://deepseek.com",
+    modelCount: 4,
+    matrix: ["deepseek-v3", "deepseek-r1"],
+    capabilityTags: ["性价比", "代码生成", "数学推理", "开源"],
+    timeline: [
+      { date: "2025-01-20", event: "发布 DeepSeek-R1 推理模型", type: "release", details: "性能比肩 o1 的开源推理模型，开启国产推理新纪元。" },
+      { date: "2024-12-26", event: "发布 DeepSeek-V3", type: "release", details: "极致性价比的 671B 参数模型，推理成本极低。" }
+    ]
+  },
+  {
+    id: "google",
+    name: "Google DeepMind",
+    logo: "https://cdn.simpleicons.org/google/white",
+    description: "Google 旗下 AI 研究部门，Gemini 系列模型开发者。",
+    region: "美国",
+    compliance: "海外",
+    funding: "母公司上市",
+    website: "https://deepmind.google",
+    modelCount: 6,
+    matrix: ["gemini-1-5-pro"],
+    capabilityTags: ["超长上下文", "视频理解", "多模态"],
+    timeline: [
+      { date: "2024-02-15", event: "发布 Gemini 1.5 Pro", type: "release", details: "支持高达 200 万 token 的超长上下文窗口。" }
+    ]
+  },
+  {
+    id: "meta",
+    name: "Meta AI",
+    logo: "https://cdn.simpleicons.org/meta/white",
+    description: "Meta 开源 AI 研究部门，Llama 系列模型开发者。",
+    region: "美国",
+    compliance: "海外",
+    funding: "母公司上市",
+    website: "https://ai.meta.com",
+    modelCount: 5,
+    matrix: ["llama-3-1-405b"],
+    capabilityTags: ["开源", "微调", "企业私有化"],
+    timeline: [
+      { date: "2024-07-23", event: "发布 Llama 3.1 系列", type: "release", details: "包含首个 405B 参数的开源顶级模型。" }
+    ]
+  },
+  {
+    id: "alibaba",
+    name: "阿里云（通义）",
+    logo: "https://cdn.simpleicons.org/alibabacloud/white",
+    description: "阿里巴巴旗下，通义千问系列模型开发者。",
+    region: "中国",
+    compliance: "国内已备案",
+    funding: "母公司上市",
+    website: "https://tongyi.aliyun.com",
+    modelCount: 6,
+    matrix: ["qwen-2-5-72b"],
+    capabilityTags: ["中文理解", "代码生成", "开源"],
+    timeline: [
+      { date: "2024-09-19", event: "发布 Qwen 2.5 系列", type: "release", details: "在中文能力和代码能力上大幅提升。" }
+    ]
+  },
+  {
+    id: "black-forest-labs",
+    name: "Black Forest Labs",
+    logo: "https://blackforestlabs.ai/wp-content/uploads/2024/08/cropped-BFL-Logo-1-32x32.png",
+    description: "由 Stable Diffusion 原班人马创立，专注于下一代生成式 AI 模型。",
+    region: "德国",
+    compliance: "海外",
+    funding: "超 $3000 万融资",
+    website: "https://blackforestlabs.ai",
+    modelCount: 3,
+    matrix: ["flux-1-dev"],
+    capabilityTags: ["图像生成", "开源", "SOTA"],
+    timeline: [
+      { date: "2024-08-01", event: "发布 FLUX.1 系列模型", type: "release", details: "在图像质量、文字渲染和指令遵循方面达到新高度。" }
+    ]
+  },
+  {
+    id: "kuaishou",
+    name: "快手（可灵）",
+    logo: "https://cdn.simpleicons.org/kuaishou/white",
+    description: "中国领先的短视频平台，可灵视频生成模型开发者。",
+    region: "中国",
+    compliance: "国内已备案",
+    funding: "上市公司",
+    website: "https://klingai.kuaishou.com/",
+    modelCount: 2,
+    matrix: ["kling"],
+    capabilityTags: ["视频生成", "高画质", "长视频"],
+    timeline: [
+      { date: "2024-06-06", event: "发布可灵视频生成模型", type: "release", details: "支持生成长达 2 分钟的 1080p 视频。" }
+    ]
+  },
+  {
+    id: "luma-ai",
+    name: "Luma AI",
+    logo: "https://lumalabs.ai/favicon.ico",
+    description: "专注于 3D 视觉与视频生成的 AI 公司。",
+    region: "美国",
+    compliance: "海外",
+    funding: "超 $7000 万融资",
+    website: "https://lumalabs.ai",
+    modelCount: 2,
+    matrix: ["luma-dream-machine"],
+    capabilityTags: ["视频生成", "3D 重建", "快速"],
+    timeline: [
+      { date: "2024-06-12", event: "发布 Dream Machine", type: "release", details: "极速视频生成模型，物理模拟效果出色。" }
+    ]
+  }
+];
+
+export const models: Model[] = [
+  {
+    id: "gpt-4o",
+    name: "GPT-4o",
+    provider: "openai",
+    modelType: "旗舰模型",
+    modality: "多模态",
+    isOpenSource: false,
+    contextWindow: 128000,
+    maxOutput: 4096,
+    positioningSummary: "适合高质量多模态任务，性能强但成本偏高，适用于复杂生产场景。",
+    riskWarning: "不适合极低预算项目",
+    pricing: { 
+      input: 75, 
+      output: 300, 
+      priceUnit: "百万 Token",
+      freeTier: "首月赠 $5 额度" 
+    },
+    performance: { mmlu: 88.7, humaneval: 90.2, gsm8k: 95.8, avgStability: "99.2%" },
+    speed: { ttft: 320, tps: 82 },
+    latency: 350,
+    throughput: 85,
+    stability: 99.5,
+    releaseDate: "2024-05-13",
+    concurrencyRating: 4,
+    openaiCompatible: true,
+    dataSource: { 
+      name: "OpenAI 官方文档", 
+      url: "https://platform.openai.com/docs/models",
+      updatedAt: "2024-12-01",
+      note: "性能数据来源于官方技术报告"
+    },
+    tags: ["代码生成", "多轮对话", "RAG", "函数调用"],
+    scenarios: ["生成文章", "办公", "代码开发", "生成图片"],
+    suitableFor: ["需要极高性能的生产环境", "多模态交互场景", "复杂逻辑推理"],
+    unsuitableFor: ["极低预算项目", "对数据隐私有极端本地化要求的场景"],
+    recommendationReason: "目前综合能力最强的多模态模型，生态最完善。",
+    eloScore: 1385,
+    purchaseLinks: { purchase: "https://platform.openai.com/signup", official: "https://openai.com" },
+    officialLinks: "https://openai.com/index/hello-gpt-4o/",
+    benchmarks: [
+      { name: "MMLU", score: 88.7, source: "官方报告" },
+      { name: "HumanEval", score: 90.2, source: "官方报告" }
+    ]
+  },
+  {
+    id: "gpt-4o-mini",
+    name: "GPT-4o Mini",
+    provider: "openai",
+    modelType: "轻量模型",
+    modality: "多模态",
+    isOpenSource: false,
+    contextWindow: 128000,
+    maxOutput: 16384,
+    positioningSummary: "适合低成本高频调用，适用于通用问答、轻量客服和大规模部署。",
+    riskWarning: "不适合极复杂逻辑推理",
+    pricing: { 
+      input: 10.5, 
+      output: 42, 
+      priceUnit: "百万 Token",
+      freeTier: "首月赠 $5 额度" 
+    },
+    performance: { mmlu: 82.0, humaneval: 87.0, gsm8k: 93.2, avgStability: "99.5%" },
+    speed: { ttft: 200, tps: 110 },
+    latency: 220,
+    throughput: 115,
+    stability: 99.8,
+    releaseDate: "2024-07-18",
+    concurrencyRating: 5,
+    openaiCompatible: true,
+    dataSource: { 
+      name: "OpenAI 官方文档", 
+      updatedAt: "2024-12-01"
+    },
+    tags: ["轻量推理", "分类", "客服对话"],
+    scenarios: ["办公", "客服对话"],
+    suitableFor: ["高频简单任务", "对响应速度要求极高的场景", "低成本替代方案"],
+    unsuitableFor: ["极复杂逻辑推理", "超长文本深度分析"],
+    recommendationReason: "极致性价比，响应速度极快，适合大规模部署。",
+    eloScore: 1245,
+    purchaseLinks: { purchase: "https://platform.openai.com/signup", official: "https://openai.com" },
+    officialLinks: "https://openai.com/index/gpt-4o-mini/",
+    benchmarks: []
+  },
+  {
+    id: "o1",
+    name: "o1",
+    provider: "openai",
+    modelType: "旗舰模型",
+    modality: "纯文本",
+    isOpenSource: false,
+    contextWindow: 200000,
+    maxOutput: 100000,
+    pricing: { 
+      input: 105, 
+      output: 420, 
+      priceUnit: "百万 Token",
+      freeTier: null 
+    },
+    performance: { mmlu: 91.8, humaneval: 94.8, gsm8k: 99.1, avgStability: "98.5%" },
+    speed: { ttft: 2500, tps: 45 },
+    latency: 2800,
+    throughput: 40,
+    stability: 98.2,
+    releaseDate: "2024-12-17",
+    concurrencyRating: 3,
+    openaiCompatible: true,
+    dataSource: { 
+      name: "OpenAI 官方公告", 
+      updatedAt: "2024-12-20"
+    },
+    tags: ["复杂推理", "数学", "科研", "代码生成"],
+    scenarios: ["复杂推理", "代码开发"],
+    suitableFor: ["科研难题攻关", "极复杂代码重构", "数学竞赛级问题"],
+    unsuitableFor: ["日常闲聊", "简单信息查询", "对延迟敏感的实时交互"],
+    recommendationReason: "开启强化学习推理新时代，逻辑能力断层领先。",
+    eloScore: 1410,
+    purchaseLinks: { purchase: "https://platform.openai.com/signup", official: "https://openai.com" },
+    officialLinks: "https://openai.com/index/introducing-openai-o1-preview/",
+    benchmarks: []
+  },
+  {
+    id: "claude-3-5-sonnet",
+    name: "Claude 3.5 Sonnet",
+    provider: "anthropic",
+    modelType: "旗舰模型",
+    modality: "多模态",
+    isOpenSource: false,
+    contextWindow: 200000,
+    maxOutput: 8192,
+    positioningSummary: "适合重视稳定文本能力与长文本处理的团队，价格中高，偏企业应用。",
+    riskWarning: "不适合极低成本需求",
+    pricing: { 
+      input: 21, 
+      output: 105, 
+      priceUnit: "百万 Token",
+      freeTier: null 
+    },
+    performance: { mmlu: 88.7, humaneval: 92.0, gsm8k: 96.4, avgStability: "99.0%" },
+    speed: { ttft: 380, tps: 75 },
+    latency: 400,
+    throughput: 78,
+    stability: 99.1,
+    releaseDate: "2024-06-20",
+    concurrencyRating: 4,
+    openaiCompatible: false,
+    dataSource: { 
+      name: "Anthropic 官方数据", 
+      updatedAt: "2024-11-15"
+    },
+    tags: ["长文本", "代码生成", "文档分析", "多轮对话"],
+    scenarios: ["生成文章", "办公", "代码开发"],
+    suitableFor: ["长文档深度理解", "高质量代码编写", "需要更自然对话风格的场景"],
+    unsuitableFor: ["极低成本需求", "需要 OpenAI 生态深度绑定的项目"],
+    recommendationReason: "目前代码能力和长文本理解最均衡的顶尖模型。",
+    eloScore: 1372,
+    purchaseLinks: { purchase: "https://console.anthropic.com/", official: "https://anthropic.com" },
+    officialLinks: "https://www.anthropic.com/news/claude-3-5-sonnet",
+    benchmarks: []
+  },
+  {
+    id: "deepseek-v3",
+    name: "DeepSeek-V3",
+    provider: "deepseek",
+    modelType: "旗舰模型",
+    modality: "纯文本",
+    isOpenSource: true,
+    contextWindow: 64000,
+    maxOutput: 8192,
+    positioningSummary: "适合预算敏感的文本任务，在成本和能力之间有较好平衡。",
+    riskWarning: "不适合原生多模态支持场景",
+    pricing: { 
+      input: 2, 
+      output: 14, 
+      priceUnit: "百万 Token",
+      freeTier: "注册赠 500 万 Token" 
+    },
+    performance: { mmlu: 88.5, humaneval: 89.5, gsm8k: 97.1, avgStability: "98.8%" },
+    speed: { ttft: 250, tps: 120 },
+    latency: 280,
+    throughput: 125,
+    stability: 99.0,
+    releaseDate: "2024-12-26",
+    concurrencyRating: 4,
+    openaiCompatible: true,
+    dataSource: { 
+      name: "DeepSeek 官方发布", 
+      updatedAt: "2024-12-26"
+    },
+    tags: ["代码生成", "中文理解", "数学推理", "性价比"],
+    scenarios: ["生成文章", "代码开发"],
+    suitableFor: ["追求极致性价比的项目", "中文语境深度应用", "大规模自动化处理"],
+    unsuitableFor: ["需要原生多模态支持的场景", "极长文本（超过 64k）处理"],
+    recommendationReason: "国产模型之光，性能直逼 GPT-4o 但价格仅为其几十分之一。",
+    eloScore: 1341,
+    purchaseLinks: { purchase: "https://platform.deepseek.com/", official: "https://deepseek.com" },
+    officialLinks: "https://www.deepseek.com/",
+    benchmarks: []
+  },
+  {
+    id: "deepseek-r1",
+    name: "DeepSeek-R1",
+    provider: "deepseek",
+    modelType: "旗舰模型",
+    modality: "纯文本",
+    isOpenSource: true,
+    contextWindow: 64000,
+    maxOutput: 8192,
+    pricing: { 
+      input: 4, 
+      output: 28, 
+      priceUnit: "百万 Token",
+      freeTier: "注册赠 500 万 Token" 
+    },
+    performance: { mmlu: 90.8, humaneval: 92.8, gsm8k: 98.9, avgStability: "98.2%" },
+    speed: { ttft: 1800, tps: 60 },
+    latency: 2000,
+    throughput: 55,
+    stability: 98.5,
+    releaseDate: "2025-01-20",
+    concurrencyRating: 3,
+    openaiCompatible: true,
+    dataSource: { 
+      name: "DeepSeek 官方发布", 
+      updatedAt: "2025-01-20"
+    },
+    tags: ["复杂推理", "数学", "代码生成", "思维链"],
+    scenarios: ["复杂推理", "代码开发"],
+    suitableFor: ["数学竞赛题目", "逻辑严密的学术分析", "开源推理模型研究"],
+    unsuitableFor: ["快速响应的简单问答", "多模态任务"],
+    recommendationReason: "首个性能比肩 o1 的国产开源推理模型。",
+    eloScore: 1395,
+    purchaseLinks: { purchase: "https://platform.deepseek.com/", official: "https://deepseek.com" },
+    officialLinks: "https://www.deepseek.com/",
+    benchmarks: []
+  },
+  {
+    id: "gemini-1-5-pro",
+    name: "Gemini 1.5 Pro",
+    provider: "google",
+    modelType: "旗舰模型",
+    modality: "多模态",
+    isOpenSource: false,
+    contextWindow: 2000000,
+    maxOutput: 8192,
+    pricing: { input: 25, output: 75, priceUnit: "百万 Token", freeTier: "每日免费额度" },
+    performance: { mmlu: 85.9, humaneval: 84.1, gsm8k: 91.7, avgStability: "99.0%" },
+    speed: { ttft: 450, tps: 65 },
+    latency: 500,
+    throughput: 70,
+    stability: 99.2,
+    releaseDate: "2024-02-15",
+    concurrencyRating: 4,
+    openaiCompatible: false,
+    dataSource: { name: "Google AI Blog", updatedAt: "2024-11-01" },
+    tags: ["超长上下文", "视频理解", "多模态"],
+    scenarios: ["长文本处理", "视频理解"],
+    suitableFor: ["超长文档分析", "视频内容检索", "多模态复杂任务"],
+    unsuitableFor: ["极低延迟需求", "纯代码开发（相比 Claude）"],
+    recommendationReason: "200万上下文窗口，视频理解能力业内领先。",
+    eloScore: 1355,
+    purchaseLinks: { purchase: "https://aistudio.google.com/", official: "https://deepmind.google" },
+    officialLinks: "https://deepmind.google/technologies/gemini/",
+    benchmarks: []
+  },
+  {
+    id: "flux-1-dev",
+    name: "FLUX.1 [dev]",
+    provider: "black-forest-labs",
+    modelType: "Diffusion",
+    modality: "图像生成",
+    isOpenSource: true,
+    contextWindow: 0,
+    maxOutput: 0,
+    pricing: { input: 0, output: 0, priceUnit: "Image", freeTier: "开源模型" },
+    performance: { mmlu: 0, humaneval: 0, gsm8k: 0, avgStability: "98.0%" },
+    speed: { ttft: 0, tps: 0 },
+    latency: 5000,
+    throughput: 1,
+    stability: 98.5,
+    releaseDate: "2024-08-01",
+    concurrencyRating: 3,
+    openaiCompatible: false,
+    dataSource: { name: "Black Forest Labs", updatedAt: "2024-08-01" },
+    tags: ["图像生成", "开源", "写实"],
+    scenarios: ["图像生成", "设计"],
+    suitableFor: ["高质量图像创作", "写实摄影风格", "本地部署"],
+    unsuitableFor: ["文本对话", "低显存环境"],
+    recommendationReason: "目前最强的开源图像生成模型，细节表现惊人。",
+    eloScore: 1280,
+    purchaseLinks: { purchase: "https://replicate.com/black-forest-labs/flux-dev", official: "https://blackforestlabs.ai" },
+    officialLinks: "https://blackforestlabs.ai/",
+    benchmarks: []
+  },
+  {
+    id: "kling",
+    name: "可灵 (Kling)",
+    provider: "kuaishou",
+    modelType: "Video",
+    modality: "视频生成",
+    isOpenSource: false,
+    contextWindow: 0,
+    maxOutput: 0,
+    pricing: { input: 0, output: 0, priceUnit: "Video", freeTier: "每日赠送积分" },
+    performance: { mmlu: 0, humaneval: 0, gsm8k: 0, avgStability: "95.0%" },
+    speed: { ttft: 0, tps: 0 },
+    latency: 120000,
+    throughput: 1,
+    stability: 96.0,
+    releaseDate: "2024-06-06",
+    concurrencyRating: 2,
+    openaiCompatible: false,
+    dataSource: { name: "快手官方", updatedAt: "2024-06-06" },
+    tags: ["视频生成", "高画质", "长视频"],
+    scenarios: ["视频生成", "内容创作"],
+    suitableFor: ["电影感视频生成", "复杂动作模拟", "长达2分钟视频"],
+    unsuitableFor: ["实时交互", "文本对话"],
+    recommendationReason: "国产最强视频生成模型，支持超长视频生成。",
+    eloScore: 1320,
+    purchaseLinks: { purchase: "https://klingai.kuaishou.com/", official: "https://klingai.kuaishou.com/" },
+    officialLinks: "https://klingai.kuaishou.com/",
+    benchmarks: []
+  },
+  {
+    id: "luma-dream-machine",
+    name: "Luma Dream Machine",
+    provider: "luma-ai",
+    modelType: "Video",
+    modality: "视频生成",
+    isOpenSource: false,
+    contextWindow: 0,
+    maxOutput: 0,
+    pricing: { input: 0, output: 0, priceUnit: "Video", freeTier: "每月 30 个免费视频" },
+    performance: { mmlu: 0, humaneval: 0, gsm8k: 0, avgStability: "94.0%" },
+    speed: { ttft: 0, tps: 0 },
+    latency: 60000,
+    throughput: 1,
+    stability: 95.0,
+    releaseDate: "2024-06-12",
+    concurrencyRating: 3,
+    openaiCompatible: false,
+    dataSource: { name: "Luma AI", updatedAt: "2024-06-12" },
+    tags: ["视频生成", "快速", "写实"],
+    scenarios: ["视频生成", "社交媒体"],
+    suitableFor: ["快速视频原型", "写实动态场景"],
+    unsuitableFor: ["超长视频", "文本对话"],
+    recommendationReason: "生成速度快，物理特性模拟优秀。",
+    eloScore: 1295,
+    purchaseLinks: { purchase: "https://lumalabs.ai/dream-machine", official: "https://lumalabs.ai" },
+    officialLinks: "https://lumalabs.ai/dream-machine",
+    benchmarks: []
+  }
+];
+
+export const promptTemplates: Prompt[] = [
+  {
+    id: "p1",
+    title: "供应链单据提取",
+    scene: "结构化提取",
+    promptContent: `You are a precise data extraction engine. Given any unstructured text input, extract the requested entities and return ONLY valid JSON. Rules:\n1. Never fabricate data not present in the source text\n2. Use null for missing fields, never guess\n3. Normalize dates to ISO 8601 format\n4. Return arrays for multi-value fields\n\nOutput format: {"entities": [...], "confidence": 0.0-1.0}`,
+    description: "将非结构化物流单据提炼为标准 JSON 结构，适合票据/表单提取场景。",
+    applicableModels: ["gpt-4o", "claude-3-5-sonnet", "deepseek-v3"]
+  },
+  {
+    id: "p2",
+    title: "高性价比代码助手",
+    scene: "代码",
+    promptContent: `You are a senior software engineer. Write clean, production-ready code.\nRules:\n1. Prefer standard library over third-party dependencies\n2. Add type hints (Python) or TypeScript types\n3. Include error handling for edge cases\n4. Add brief inline comments only for non-obvious logic\n5. If the request is ambiguous, state your assumptions before coding\n\nNever use placeholder comments like "// TODO" or "// implement here".`,
+    description: "日常代码生成与调试，注重生产环境质量。",
+    applicableModels: ["deepseek-v3", "gpt-4o", "claude-3-5-sonnet"]
+  },
+  {
+    id: "p3",
+    title: "数学竞赛解题专家",
+    scene: "推理",
+    promptContent: "请作为一名数学竞赛教练，使用思维链（CoT）逐步分析并解决以下难题。请确保每一步逻辑严密，并最后给出标准答案。",
+    description: "适合推理模型，充分发挥思维链能力。",
+    applicableModels: ["o1", "deepseek-r1"]
+  },
+  {
+    id: "p4",
+    title: "智能客服话术生成",
+    scene: "客服",
+    promptContent: "你是一名资深客服专家，请根据以下用户问题，生成一段既专业又有温度的回复。要求：1. 语气亲切；2. 逻辑清晰；3. 包含明确的下一步指引。",
+    description: "适合轻量级模型，快速生成高质量客服回复。",
+    applicableModels: ["gpt-4o-mini", "qwen-2-5-72b"]
+  }
+];
+
+export const trendEvents: TrendEvent[] = [
+  {
+    id: "t1",
+    title: "DeepSeek-R1 发布",
+    reason: "国产推理模型性能突破，比肩 OpenAI o1。",
+    description: "DeepSeek-R1 在多项数学和代码基准测试中表现优异，且完全开源。",
+    date: "2025-01-20",
+    modelId: "deepseek-r1",
+    relatedModels: ["o1", "claude-3-5-sonnet"],
+    actionUrl: "/ai-models/models/deepseek-r1",
+    type: "new_release",
+    ctaLabel: "查看详情"
+  },
+  {
+    id: "t2",
+    title: "DeepSeek-V3",
+    reason: "适合预算敏感且需要较强文本能力的项目。",
+    description: "对于大规模文本处理任务，DeepSeek-V3 提供了无与伦比的成本优势。",
+    date: "2024-12-26",
+    modelId: "deepseek-v3",
+    relatedModels: ["gpt-4o", "qwen-2-5-72b"],
+    actionUrl: "/ai-models/models/deepseek-v3",
+    type: "low_cost",
+    ctaLabel: "加入对比"
+  },
+  {
+    id: "t3",
+    title: "GPT-4o Mini 降价通知",
+    reason: "适合替代高成本轻量对话模型，适用于客服和通用问答。",
+    description: "OpenAI 宣布下调 GPT-4o Mini 的价格，使其在轻量级模型中极具竞争力。",
+    date: "2024-11-01",
+    modelId: "gpt-4o-mini",
+    relatedModels: ["deepseek-v3", "qwen-2-5-72b"],
+    actionUrl: "/ai-models/discover",
+    type: "price_drop",
+    ctaLabel: "查看替代方案"
+  }
+];
+
+export const scenarios: Scenario[] = [
+  {
+    id: "1",
+    title: "🔗 供应链单据提取",
+    description: "将非结构化物流单据转化为标准 JSON 结构，准确率可达 95%+",
+    matchScore: 85,
+    modelIds: ["gpt-4o", "claude-3-5-sonnet", "deepseek-v3"]
+  },
+  {
+    id: "2",
+    title: "💻 复杂代码重构",
+    description: "针对遗留代码进行架构升级与性能优化建议",
+    matchScore: 92,
+    modelIds: ["o1", "claude-3-5-sonnet", "deepseek-r1"]
+  },
+  {
+    id: "3",
+    title: "📊 研报摘要生成",
+    description: "从数百页 PDF 中提取核心财务指标与风险提示",
+    matchScore: 88,
+    modelIds: ["gemini-1-5-pro", "claude-3-5-sonnet"]
+  },
+  {
+    id: "4",
+    title: "🤖 智能客服中台",
+    description: "支持多轮对话与意图识别，毫秒级响应",
+    matchScore: 95,
+    modelIds: ["gpt-4o-mini", "qwen-2-5-72b"]
+  }
+];
