@@ -78,15 +78,6 @@
     color: var(--color-text-primary);
   }
 
-  .modelhub-page::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: -1;
-    background: linear-gradient(180deg, rgba(12, 18, 28, 0.2), rgba(12, 18, 28, 0));
-  }
-
   .modelhub-scope .bg-zinc-900\/20,
   .modelhub-scope .bg-zinc-900\/30,
   .modelhub-scope .bg-zinc-900\/40,

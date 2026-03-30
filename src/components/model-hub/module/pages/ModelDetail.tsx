@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ExternalLink, Copy, Check, Zap, Gauge, ShieldCheck, Terminal, BookOpen, Layers, MessageSquare, AlertCircle, ChevronRight, Info, Calculator, TrendingDown, Sparkles, XCircle, CheckCircle2, Globe } from 'lucide-react';
-import { models, providers, promptTemplates, scenarios } from '../constants';
+import { ExternalLink, Copy, Check, Zap, Gauge, ShieldCheck, Terminal, Layers, MessageSquare, AlertCircle, ChevronRight, Info, Calculator, TrendingDown, Sparkles, XCircle, CheckCircle2, Globe } from 'lucide-react';
+import { models, providers, trendEvents } from '../constants';
 import { cn, formatPrice, formatNumber } from '../lib/utils';
 import { useCompare } from '../hooks/useCompare';
 import { LogoAvatar } from '../components/LogoAvatar';
@@ -13,6 +13,7 @@ export const ModelDetail = () => {
   const model = models.find(m => m.id === id);
   const provider = providers.find(p => p.id === model?.provider);
   const [copied, setCopied] = useState(false);
+  const [isIntroExpanded, setIsIntroExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState('python');
   
   // Calculator state
@@ -41,6 +42,29 @@ export const ModelDetail = () => {
       .slice(0, 2);
   }, [model]);
 
+  const introText = [model.overview, model.positioningSummary].filter(Boolean).join(' ');
+
+  const versionRecords = useMemo(() => {
+    const releaseRecord = {
+      date: model.releaseDate,
+      title: `${model.name} 首次发布`,
+      description: model.positioningSummary || model.overview,
+      type: 'release' as const,
+    };
+
+    const relatedTrendRecords = trendEvents
+      .filter((event) => event.modelId === model.id)
+      .map((event) => ({
+        date: event.date,
+        title: event.title,
+        description: event.reason || event.description,
+        type: event.type,
+      }));
+
+    return [releaseRecord, ...relatedTrendRecords]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [model]);
+
   const codeExamples = {
     curl: `curl https://api.openai.com/v1/chat/completions \\
   -H "Content-Type: application/json" \\
@@ -54,11 +78,9 @@ export const ModelDetail = () => {
     node: `import OpenAI from 'openai';\n\nconst openai = new OpenAI({\n  apiKey: 'YOUR_API_KEY',\n  baseURL: 'https://api.openai.com/v1',\n});\n\nconst response = await openai.chat.completions.create({\n  model: '${model.id}',\n  messages: [{ role: 'user', content: 'Hello' }],\n});\nconsole.log(response.choices[0].message.content);`,
   };
 
-  const modelScenarios = scenarios.filter(s => s.modelIds.includes(model.id));
-
   return (
     <div className="modelhub-page py-4">
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
         {/* Main Content */}
         <div className="flex-1 min-w-0">
           <SubpageHero
@@ -121,12 +143,16 @@ export const ModelDetail = () => {
                 <Info size={18} className="text-[#1ed661]" />
                 <h2 className="text-2xl font-bold text-white tracking-tight">模型介绍</h2>
               </div>
-              <p className="text-sm text-zinc-300 leading-7 mb-4">
-                {model.overview}
+              <p className={cn('text-sm leading-7 text-zinc-300', !isIntroExpanded && 'line-clamp-2')}>
+                {introText}
               </p>
-              <p className="text-sm text-zinc-500 leading-7">
-                {model.positioningSummary}
-              </p>
+              <button
+                type="button"
+                onClick={() => setIsIntroExpanded((expanded) => !expanded)}
+                className="mt-4 text-sm font-medium text-[#1ed661] transition-colors hover:text-[#31e673]"
+              >
+                {isIntroExpanded ? '收起' : '展开'}查看全文
+              </button>
             </div>
             <div className="bg-zinc-900/30 border border-white/5 rounded-2xl p-6">
               <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-4">核心标签</div>
@@ -142,6 +168,26 @@ export const ModelDetail = () => {
                 {model.popularityReason || model.recommendationReason}
               </p>
             </div>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+            {[
+              { label: '首字延迟', value: `~${model.speed.ttft}ms`, sub: model.dataSource.name === 'official' ? '官方数据' : '第三方测评', icon: Zap, color: 'text-[#1ed661]', dot: 'bg-[#1ed661]' },
+              { label: '生成速度', value: `${model.speed.tps} TPS`, sub: model.dataSource.name === 'official' ? '官方数据' : '平台实测', icon: Gauge, color: 'text-green-400', dot: 'bg-green-400' },
+              { label: '并发稳定性', value: '⭐⭐⭐⭐', sub: '社区反馈', icon: ShieldCheck, color: 'text-yellow-400', dot: 'bg-yellow-400' },
+              { label: 'API 兼容', value: model.openaiCompatible ? '✅ 兼容' : '❌ 不兼容', sub: 'OpenAI 格式', icon: Terminal, color: 'text-zinc-200', dot: 'bg-zinc-200' },
+            ].map((stat, i) => (
+              <div key={i} className="bg-zinc-900/30 border border-white/5 rounded-2xl p-5">
+                <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">
+                  <stat.icon size={14} className="text-zinc-600" /> {stat.label}
+                </div>
+                <div className={cn("text-2xl font-bold font-mono tabular-nums mb-1", stat.color)}>{stat.value}</div>
+                <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-bold uppercase tracking-tighter">
+                  <span className={cn("w-1 h-1 rounded-full", stat.dot)} /> {stat.sub}
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Suitability */}
@@ -172,26 +218,6 @@ export const ModelDetail = () => {
                 ))}
               </ul>
             </div>
-          </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
-            {[
-              { label: '首字延迟', value: `~${model.speed.ttft}ms`, sub: model.dataSource.name === 'official' ? '官方数据' : '第三方测评', icon: Zap, color: 'text-[#1ed661]', dot: 'bg-[#1ed661]' },
-              { label: '生成速度', value: `${model.speed.tps} TPS`, sub: model.dataSource.name === 'official' ? '官方数据' : '平台实测', icon: Gauge, color: 'text-green-400', dot: 'bg-green-400' },
-              { label: '并发稳定性', value: '⭐⭐⭐⭐', sub: '社区反馈', icon: ShieldCheck, color: 'text-yellow-400', dot: 'bg-yellow-400' },
-              { label: 'API 兼容', value: model.openaiCompatible ? '✅ 兼容' : '❌ 不兼容', sub: 'OpenAI 格式', icon: Terminal, color: 'text-zinc-200', dot: 'bg-zinc-200' },
-            ].map((stat, i) => (
-              <div key={i} className="bg-zinc-900/30 border border-white/5 rounded-2xl p-5">
-                <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-3">
-                  <stat.icon size={14} className="text-zinc-600" /> {stat.label}
-                </div>
-                <div className={cn("text-2xl font-bold font-mono tabular-nums mb-1", stat.color)}>{stat.value}</div>
-                <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-bold uppercase tracking-tighter">
-                  <span className={cn("w-1 h-1 rounded-full", stat.dot)} /> {stat.sub}
-                </div>
-              </div>
-            ))}
           </div>
 
           {/* Cost Calculator */}
@@ -289,61 +315,32 @@ export const ModelDetail = () => {
             </div>
           </div>
 
-          {/* Prompt Templates */}
           <div className="mb-16">
-            <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3 mb-8">
-              <BookOpen size={24} className="text-purple-400" /> 高分 Prompt 库
+            <h2 className="mb-8 flex items-center gap-3 text-2xl font-bold tracking-tight text-white">
+              <Sparkles size={24} className="text-sky-300" /> 版本更新记录
             </h2>
-            <div className="grid grid-cols-1 gap-6">
-              {promptTemplates.filter(t => t.applicableModels.includes(model.id)).map((template, i) => (
-                <div key={i} className="bg-zinc-900/30 border border-white/5 rounded-2xl p-8">
-                  <div className="flex items-center justify-between mb-6">
+            <div className="space-y-4">
+              {versionRecords.map((record, index) => (
+                <div key={`${record.date}-${index}`} className="rounded-2xl border border-white/5 bg-zinc-900/30 p-6">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <h3 className="text-lg font-bold text-white mb-1">📌 {template.title}</h3>
-                      <p className="text-xs text-zinc-500 font-bold uppercase tracking-widest">适用场景：{template.scene}</p>
+                      <div className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-600">{record.date}</div>
+                      <h3 className="mt-2 text-lg font-bold text-white">{record.title}</h3>
+                      <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-400">{record.description}</p>
                     </div>
-                    <button 
-                      onClick={() => handleCopy(template.promptContent)}
-                      className="px-4 py-2 bg-zinc-900 border border-white/10 rounded-xl text-xs font-bold text-zinc-300 hover:bg-zinc-800 transition-all"
-                    >
-                      复制 Prompt
-                    </button>
-                  </div>
-                  <div className="bg-black/50 border border-white/5 rounded-xl p-6 text-sm font-mono text-zinc-400 whitespace-pre-wrap leading-relaxed">
-                    {template.promptContent}
+                    <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-400">
+                      {record.type === 'release' ? '发布记录' : '版本动态'}
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Scenarios */}
-          <div className="mb-16">
-            <h2 className="text-2xl font-bold text-white tracking-tight flex items-center gap-3 mb-8">
-              <Layers size={24} className="text-[#1ed661]" /> 业务场景导购
-            </h2>
-            <div className="flex overflow-x-auto gap-6 pb-6 snap-x no-scrollbar">
-              {modelScenarios.map((scenario, i) => (
-                <div key={i} className="w-[320px] shrink-0 bg-zinc-900/30 border border-white/5 rounded-2xl p-8 snap-start hover:bg-zinc-900/50 transition-all">
-                  <h3 className="text-lg font-bold text-white mb-4">{scenario.title}</h3>
-                  <p className="text-sm text-zinc-500 mb-8 leading-relaxed h-12 line-clamp-3">
-                    {scenario.description}
-                  </p>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">匹配度</span>
-                    <span className="text-sm font-bold font-mono text-[#1ed661]">{scenario.matchScore}%</span>
-                  </div>
-                  <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-[#1ed661] shadow-[0_0_10px_rgba(30,214,97,0.45)]" style={{ width: `${scenario.matchScore}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Sidebar */}
-        <div className="w-full lg:w-80 shrink-0">
+        <div className="w-full shrink-0 self-start lg:w-80">
           <div className="sticky top-24 space-y-6">
             {/* Price Card */}
             <div className="bg-[#1ed661]/5 border border-[#1ed661]/10 rounded-2xl p-8 shadow-2xl shadow-[#1ed661]/5">
