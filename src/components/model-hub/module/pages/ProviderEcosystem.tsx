@@ -2,26 +2,24 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { providers, models } from '../constants';
+import { SubpageHero } from '../components/SubpageHero';
+import { SubpageIntro } from '../components/SubpageIntro';
 
 export const ProviderEcosystem = () => {
   return (
     <div className="modelhub-page pb-24 font-sans">
-      <section className="relative pt-24 pb-12 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#10b98115,transparent_50%)]" />
-        <div className="max-w-7xl mx-auto px-4 relative text-center">
-          <div className="flex justify-center mb-6">
-             <div className="w-12 h-12 bg-emerald-600/20 rounded-2xl flex items-center justify-center border border-emerald-500/30">
-                <Sparkles className="text-emerald-500" size={24} />
-             </div>
-          </div>
-          <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-6 text-white">
-            厂商生态
-          </h1>
-          <p className="text-zinc-500 text-lg mb-12">
-            探索全球领先的 AI 研发机构与算力服务商
-          </p>
-        </div>
-      </section>
+      <SubpageHero
+        badge="厂商生态"
+        title="厂商生态"
+        description="探索全球主流 AI 厂商的能力矩阵、代表模型与落地方向，快速判断不同生态的强项与适配场景。"
+        icon={Sparkles}
+        accentClassName="text-emerald-400"
+      />
+      <SubpageIntro
+        title="厂商生态"
+        description="按厂商查看代表模型、能力方向和生态特点，帮助你快速理解每家擅长什么、适合什么业务，以及后续该往哪类模型深入。"
+        highlights={['查看厂商矩阵', '了解代表模型', '判断生态适配方向']}
+      />
 
       <section className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

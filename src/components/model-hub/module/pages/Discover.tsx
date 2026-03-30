@@ -1,11 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { Search, LayoutGrid, List, RotateCcw, ChevronRight, Info, Layers, Filter, SlidersHorizontal, ArrowUpDown, Sparkles, TrendingUp, Zap, DollarSign, ExternalLink, X, Calendar, Eye } from 'lucide-react';
-import { models, trendEvents } from '../constants';
+import { models, providers, trendEvents } from '../constants';
 import { formatPrice, cn } from '../lib/utils';
 import { useCompare } from '../hooks/useCompare';
 import { FilterState, initialFilterState, mapNaturalLanguageToFilters } from '../lib/filterUtils';
 import { useRotatingPlaceholder } from '../hooks/useRotatingPlaceholder';
+import { LogoAvatar } from '../components/LogoAvatar';
+import { SubpageHero } from '../components/SubpageHero';
+import { SubpageIntro } from '../components/SubpageIntro';
 
 export const Discover = () => {
   const { compareList, addToCompare } = useCompare();
@@ -13,6 +16,7 @@ export const Discover = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const [view, setView] = useState<'list' | 'grid'>('list');
+  const [freeOnly, setFreeOnly] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const trendsRef = useRef<HTMLDivElement>(null);
   
@@ -38,6 +42,13 @@ export const Discover = () => {
       trendsRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [location.state]);
+
+  useEffect(() => {
+    if (location.state?.autoRecommend && filters.searchQuery) {
+      const mapped = mapNaturalLanguageToFilters(filters.searchQuery);
+      setFilters(prev => ({ ...prev, ...mapped }));
+    }
+  }, [filters.searchQuery, location.state]);
 
   // Sync state to URL
   useEffect(() => {
@@ -78,8 +89,9 @@ export const Discover = () => {
       const matchesOpenSource = filters.isOpenSource === 'all' || 
                                (filters.isOpenSource === 'open' && m.isOpenSource) ||
                                (filters.isOpenSource === 'closed' && !m.isOpenSource);
+      const matchesFreeOnly = !freeOnly || Boolean(m.pricing.freeTier);
 
-      return matchesSearch && matchesType && matchesScenario && matchesBudget && matchesContext && matchesOpenSource;
+      return matchesSearch && matchesType && matchesScenario && matchesBudget && matchesContext && matchesOpenSource && matchesFreeOnly;
     }).sort((a, b) => {
       if (filters.sortBy === 'price_low') return a.pricing.output - b.pricing.output;
       if (filters.sortBy === 'performance') return b.eloScore - a.eloScore;
@@ -88,10 +100,11 @@ export const Discover = () => {
       if (filters.sortBy === 'popular') return b.concurrencyRating - a.concurrencyRating;
       return 0; // default (recommended)
     });
-  }, [filters]);
+  }, [filters, freeOnly]);
 
   const resetFilters = () => {
     setFilters(initialFilterState);
+    setFreeOnly(false);
   };
 
   const removeFilter = (key: keyof FilterState) => {
@@ -100,110 +113,90 @@ export const Discover = () => {
 
   const activeFiltersCount = Object.entries(filters).filter(([key, value]) => {
     return value !== initialFilterState[key as keyof FilterState];
-  }).length;
+  }).length + (freeOnly ? 1 : 0);
 
   return (
     <div className="modelhub-page py-4">
-      <div className="mb-12">
-        <h1 className="text-4xl font-bold tracking-tighter mb-2 text-white">找大模型</h1>
-        <p className="text-zinc-400 text-base max-w-2xl">覆盖主流厂商的 200+ 模型实时参数、价格与性能数据，支持多维硬核筛选。</p>
-      </div>
-
-      {/* Trends Module */}
-      <div ref={trendsRef} className="mb-12">
-        <div className="flex items-center gap-2 mb-6">
-          <TrendingUp className="text-[#1ed661]" size={20} />
-          <h2 className="text-xl font-bold text-white">动态趋势与行动建议</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {trendEvents.slice(0, 3).map(event => (
-            <div key={event.id} className="bg-zinc-900/50 border border-white/5 rounded-xl p-5 hover:bg-zinc-800/50 transition-all group">
-              <div className="flex items-start justify-between mb-3">
-                <div className={cn(
-                  "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter",
-                  event.type === 'price_drop' ? "bg-green-500/10 text-green-400" :
-                  event.type === 'new_release' ? "bg-[#1ed661]/10 text-[#1ed661]" :
-                  "bg-purple-500/10 text-purple-400"
-                )}>
-                  {event.type === 'price_drop' ? '降价提醒' : event.type === 'new_release' ? '新模型发布' : '性价比之选'}
-                </div>
-                <span className="text-[10px] text-zinc-600 font-mono">{event.date}</span>
-              </div>
-              <h3 className="text-sm font-bold text-white mb-2 group-hover:text-[#1ed661] transition-colors">{event.title}</h3>
-              <p className="text-xs text-zinc-400 mb-4 line-clamp-2">{event.description}</p>
-              <div className="flex items-center justify-between mt-auto">
-                <div className="flex -space-x-2">
-                  {event.relatedModels?.slice(0, 2).map(mid => (
-                    <div key={mid} className="w-6 h-6 rounded-full bg-zinc-800 border border-zinc-950 flex items-center justify-center text-[8px] font-bold text-zinc-500">
-                      {mid[0].toUpperCase()}
-                    </div>
-                  ))}
-                </div>
-                <Link 
-                  to={event.actionUrl} 
-                  className="text-[10px] text-[#1ed661] hover:text-[#1ed661] flex items-center gap-1 font-bold"
-                >
-                  立即查看 <ChevronRight size={12} />
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <SubpageHero
+        badge="模型发现"
+        title="找大模型"
+        description="覆盖主流厂商的模型参数、价格与性能信息，支持按需求、预算、模态和开源状态多维筛选。"
+        icon={Search}
+      />
+      <SubpageIntro
+        title="模型发现"
+        description="按需求、预算、模态和开源状态快速筛选模型，也可以直接用自然语言描述你的场景，系统会帮你收敛到更合适的候选方案。"
+        highlights={['按需求筛选', '支持自然语言搜索', '查看动态趋势建议']}
+      />
 
       {/* Hardcore Filter Bar */}
       <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* Search & AI Assist */}
-          <div className="space-y-4">
-            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-              <Sparkles size={10} className="text-[#1ed661]" /> 需求搜索 (支持自然语言)
-            </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,1fr)_220px]">
+            <div className="space-y-4">
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                <Sparkles size={10} className="text-[#1ed661]" /> 需求搜索 (支持自然语言)
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600" size={14} />
+                <input 
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder={placeholder}
+                  className="w-full bg-zinc-800 border border-white/10 rounded-xl h-12 pl-10 pr-10 text-sm outline-none focus:border-[#1ed661]/50 transition-all"
+                  value={filters.searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleNaturalLanguageSearch()}
+                />
+                <button 
+                  onClick={handleNaturalLanguageSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-white transition-all"
+                  title="AI 智能解析"
+                >
+                  <Zap size={14} />
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">最高输出预算 (¥/百万)</label>
+                <span className="text-xs font-mono text-[#1ed661]">¥{filters.budgetLimit}</span>
+              </div>
               <input 
-                ref={searchInputRef}
-                type="text"
-                placeholder={placeholder}
-                className="w-full bg-zinc-800 border border-white/10 rounded-xl h-10 pl-10 pr-10 text-xs outline-none focus:border-[#1ed661]/50 transition-all"
-                value={filters.searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleNaturalLanguageSearch()}
+                type="range" 
+                min="0" 
+                max="200" 
+                step="1"
+                value={filters.budgetLimit}
+                onChange={(e) => setFilters({ ...filters, budgetLimit: Number(e.target.value) })}
+                className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#1ed661]"
               />
-              <button 
-                onClick={handleNaturalLanguageSearch}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-zinc-700 rounded-lg text-zinc-400 hover:text-white transition-all"
-                title="AI 智能解析"
+              <div className="flex justify-between text-[10px] text-zinc-600 font-mono">
+                <span>¥0</span>
+                <span>¥100</span>
+                <span>¥200+</span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">快捷筛选</label>
+              <button
+                type="button"
+                onClick={() => setFreeOnly(prev => !prev)}
+                className={cn(
+                  'inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold transition-all',
+                  freeOnly
+                    ? 'border-green-500/40 bg-green-500/15 text-green-300 shadow-[0_0_0_1px_rgba(34,197,94,0.14)]'
+                    : 'border-white/10 bg-zinc-800 text-zinc-400 hover:border-white/20 hover:text-zinc-200'
+                )}
               >
-                <Zap size={14} />
+                免费模型
               </button>
             </div>
           </div>
 
-          {/* Budget Slider */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">最高输出预算 (¥/百万)</label>
-              <span className="text-xs font-mono text-[#1ed661]">¥{filters.budgetLimit}</span>
-            </div>
-            <input 
-              type="range" 
-              min="0" 
-              max="200" 
-              step="1"
-              value={filters.budgetLimit}
-              onChange={(e) => setFilters({ ...filters, budgetLimit: Number(e.target.value) })}
-              className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[#1ed661]"
-            />
-            <div className="flex justify-between text-[10px] text-zinc-600 font-mono">
-              <span>¥0</span>
-              <span>¥100</span>
-              <span>¥200+</span>
-            </div>
-          </div>
-
-          {/* Scenarios & Type */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto]">
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">应用场景</label>
               <select 
@@ -224,10 +217,6 @@ export const Discover = () => {
                 {['全部', '纯文本', '多模态', '图像生成', '视频生成'].map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
-          </div>
-
-          {/* Context & OS */}
-          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">上下文窗口</label>
               <select 
@@ -254,10 +243,17 @@ export const Discover = () => {
                 <option value="closed">闭源 API</option>
               </select>
             </div>
+            <div className="flex items-end">
+              <button 
+                onClick={resetFilters}
+                className="inline-flex h-10 items-center gap-2 rounded-lg border border-white/10 px-4 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-300"
+              >
+                <RotateCcw size={12} /> 清除全部
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Active Filter Chips */}
         {activeFiltersCount > 0 && (
           <div className="mt-6 pt-6 border-t border-white/5 flex flex-wrap items-center gap-2">
             <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mr-2">当前筛选:</span>
@@ -285,12 +281,24 @@ export const Discover = () => {
                 <button onClick={() => removeFilter('budgetLimit')}><X size={10} /></button>
               </div>
             )}
-            <button 
-              onClick={resetFilters}
-              className="text-[10px] text-zinc-500 hover:text-zinc-300 flex items-center gap-1 ml-2 transition-colors"
-            >
-              <RotateCcw size={10} /> 清除全部
-            </button>
+            {filters.contextWindow !== 0 && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-zinc-800 border border-white/10 rounded-md text-[10px] text-zinc-400">
+                上下文: {filters.contextWindow / 1000}K 以上
+                <button onClick={() => removeFilter('contextWindow')}><X size={10} /></button>
+              </div>
+            )}
+            {filters.isOpenSource !== 'all' && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-zinc-800 border border-white/10 rounded-md text-[10px] text-zinc-400">
+                开源状态: {filters.isOpenSource === 'open' ? '开源可部署' : '闭源 API'}
+                <button onClick={() => removeFilter('isOpenSource')}><X size={10} /></button>
+              </div>
+            )}
+            {freeOnly && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-green-500/10 border border-green-500/20 rounded-md text-[10px] text-green-400">
+                免费模型
+                <button onClick={() => setFreeOnly(false)}><X size={10} /></button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -338,30 +346,27 @@ export const Discover = () => {
       {view === 'list' ? (
         <div className="space-y-2 animate-in fade-in duration-500">
           {filteredModels.map(model => (
+            (() => {
+              const provider = providers.find(item => item.id === model.provider);
+
+              return (
             <div 
               key={model.id} 
               className="group flex items-center gap-4 p-4 bg-zinc-900/30 border border-white/5 rounded-xl hover:bg-zinc-900/80 transition-all cursor-pointer"
             >
               <Link to={`/ai-models/models/${model.id}`} className="flex items-center gap-4 flex-1 min-w-0">
-                <div className="w-10 h-10 bg-zinc-800 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 border border-white/5">
-                  {model.name[0]}
-                </div>
+                <LogoAvatar src={model.logo} alt={model.name} fallback={model.name[0]} size="md" className="bg-zinc-950" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-white group-hover:text-[#1ed661] transition-colors truncate">{model.name}</span>
                     {model.pricing.freeTier && <span className="text-[8px] bg-green-500/10 text-green-400 px-1.5 py-0.5 rounded-full font-bold border border-green-500/20 uppercase tracking-tighter">FREE</span>}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-zinc-500 uppercase tracking-widest truncate">{model.provider}</span>
+                    <span className="text-[10px] text-zinc-500 uppercase tracking-widest truncate">{provider?.name || model.provider}</span>
                     <span className="text-[10px] text-zinc-700">·</span>
                     <span className="text-[10px] text-zinc-500">{model.releaseDate}</span>
-                    {model.recommendationReason && (
-                      <>
-                        <span className="text-[10px] text-zinc-700">·</span>
-                        <span className="text-[10px] text-[#1ed661]/80 italic">“{model.recommendationReason}”</span>
-                      </>
-                    )}
                   </div>
+                  <p className="text-[11px] text-zinc-500 mt-2 line-clamp-2 leading-5">{model.positioningSummary || model.overview}</p>
                 </div>
               </Link>
               
@@ -410,11 +415,17 @@ export const Discover = () => {
                 </Link>
               </div>
             </div>
+              );
+            })()
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in duration-500">
           {filteredModels.map(model => (
+            (() => {
+              const provider = providers.find(item => item.id === model.provider);
+
+              return (
             <div 
               key={model.id} 
               className="p-6 bg-zinc-900/30 border border-white/5 rounded-2xl hover:bg-zinc-900/80 transition-all flex flex-col gap-4 relative group"
@@ -422,12 +433,10 @@ export const Discover = () => {
               <Link to={`/ai-models/models/${model.id}`} className="absolute inset-0 z-0" />
               <div className="flex items-start justify-between relative z-10">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-zinc-800 rounded-xl flex items-center justify-center text-sm font-bold border border-white/5">
-                    {model.name[0]}
-                  </div>
+                  <LogoAvatar src={model.logo} alt={model.name} fallback={model.name[0]} size="lg" className="bg-zinc-950" />
                   <div>
                     <div className="font-bold text-white group-hover:text-[#1ed661] transition-colors">{model.name}</div>
-                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5">{model.provider} · {model.releaseDate}</div>
+                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5">{provider?.name || model.provider} · {model.releaseDate}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -461,6 +470,10 @@ export const Discover = () => {
                 </div>
               )}
 
+              <p className="relative z-10 text-xs text-zinc-500 leading-6 line-clamp-2">
+                {model.positioningSummary || model.overview}
+              </p>
+
               <div className="flex flex-wrap gap-2 relative z-10">
                 <span className="text-[10px] px-2 py-0.5 bg-zinc-800 border border-white/5 rounded-full text-zinc-400">{model.modality}</span>
                 <span className="text-[10px] px-2 py-0.5 bg-zinc-800 border border-white/5 rounded-full text-zinc-400">{model.isOpenSource ? '开源' : '闭源'}</span>
@@ -492,6 +505,8 @@ export const Discover = () => {
                 </div>
               </div>
             </div>
+              );
+            })()
           ))}
         </div>
       )}
@@ -502,6 +517,65 @@ export const Discover = () => {
           <button onClick={resetFilters} className="text-[#1ed661] text-sm mt-4 hover:underline">清除所有筛选条件</button>
         </div>
       )}
+
+      {/* Trends Module */}
+      <div ref={trendsRef} className="mt-16">
+        <div className="flex items-center gap-2 mb-6">
+          <TrendingUp className="text-[#1ed661]" size={20} />
+          <h2 className="text-xl font-bold text-white">动态趋势与行动建议</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {trendEvents.slice(0, 3).map(event => (
+            <div key={event.id} className="bg-zinc-900/50 border border-white/5 rounded-xl p-5 hover:bg-zinc-800/50 transition-all group">
+              <div className="flex items-start justify-between mb-3">
+                <div className={cn(
+                  "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter",
+                  event.type === 'price_drop' ? "bg-green-500/10 text-green-400" :
+                  event.type === 'new_release' ? "bg-[#1ed661]/10 text-[#1ed661]" :
+                  "bg-purple-500/10 text-purple-400"
+                )}>
+                  {event.type === 'price_drop' ? '降价提醒' : event.type === 'new_release' ? '新模型发布' : '性价比之选'}
+                </div>
+                <span className="text-[10px] text-zinc-600 font-mono">{event.date}</span>
+              </div>
+              <h3 className="text-sm font-bold text-white mb-2 group-hover:text-[#1ed661] transition-colors">{event.title}</h3>
+              <p className="text-xs text-zinc-400 mb-4 line-clamp-2">{event.description}</p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {(() => {
+                  const currentModel = models.find(model => model.id === event.modelId);
+                  if (!currentModel) return null;
+
+                  return [currentModel.modality, ...currentModel.tags.slice(0, 2)].map(tag => (
+                    <span key={tag} className="px-2 py-0.5 rounded-md bg-white/5 text-[10px] text-zinc-400 border border-white/5">
+                      {tag}
+                    </span>
+                  ));
+                })()}
+              </div>
+              <div className="flex items-center justify-between mt-auto">
+                <div className="flex -space-x-2">
+                  {event.relatedModels?.slice(0, 2).map(mid => (
+                    <LogoAvatar
+                      key={mid}
+                      src={models.find(model => model.id === mid)?.logo}
+                      alt={mid}
+                      fallback={mid[0].toUpperCase()}
+                      size="sm"
+                      className="rounded-full border-zinc-950 bg-zinc-950"
+                    />
+                  ))}
+                </div>
+                <Link 
+                  to={event.actionUrl} 
+                  className="text-[10px] text-[#1ed661] hover:text-[#1ed661] flex items-center gap-1 font-bold"
+                >
+                  立即查看 <ChevronRight size={12} />
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

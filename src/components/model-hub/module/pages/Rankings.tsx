@@ -4,6 +4,9 @@ import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip, ResponsiveContaine
 import { models, providers } from '../constants';
 import { cn, formatPrice } from '../lib/utils';
 import { Zap, Trophy, DollarSign, Gem, BarChart3, ChevronRight } from 'lucide-react';
+import { LogoAvatar } from '../components/LogoAvatar';
+import { SubpageHero } from '../components/SubpageHero';
+import { SubpageIntro } from '../components/SubpageIntro';
 
 export const Rankings = () => {
   const [activeTab, setActiveTab] = useState('performance');
@@ -59,10 +62,17 @@ export const Rankings = () => {
 
   return (
     <div className="modelhub-page py-4">
-      <div className="mb-12">
-        <h1 className="text-4xl font-bold tracking-tighter mb-2 text-white">风云榜单 <span className="text-zinc-500 font-normal text-2xl ml-2">Rankings</span></h1>
-        <p className="text-zinc-400 text-base max-w-2xl">痛点解耦的硬核评测体系，基于真实跑分与实时计费数据的多维排序。</p>
-      </div>
+      <SubpageHero
+        badge="风云榜单"
+        title="模型风云榜"
+        description="基于真实跑分、上下文长度、吞吐表现与计费数据做多维排序，帮助你快速判断性能、成本和性价比。"
+        icon={Trophy}
+      />
+      <SubpageIntro
+        title="风云榜单"
+        description="从综合能力、速度、成本和性价比多个维度查看模型排名，快速判断谁更强、谁更省，以及不同模型分别适合什么任务。"
+        highlights={['看综合能力排行', '切换成本与速度视角', '查看全景分布图']}
+      />
 
       {/* Tab Navigation */}
       <div className="flex flex-wrap gap-2 mb-8 p-1 bg-zinc-900/50 border border-white/5 rounded-xl w-fit">
@@ -194,14 +204,12 @@ export const Rankings = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-7 h-7 bg-zinc-800 rounded-md flex items-center justify-center text-[10px] font-bold border border-white/5">
-                        {model.name[0]}
-                      </div>
+                      <LogoAvatar src={model.logo} alt={model.name} fallback={model.name[0]} size="sm" className="rounded-md bg-zinc-950" />
                       <span className="text-sm font-medium text-white group-hover:text-[#1ed661] transition-colors">{model.name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-xs text-zinc-500 uppercase tracking-wider">{model.provider}</span>
+                    <span className="text-xs text-zinc-500 uppercase tracking-wider">{providers.find(provider => provider.id === model.provider)?.name || model.provider}</span>
                   </td>
 
                   {activeTab === 'performance' && (

@@ -4,6 +4,8 @@ import { ExternalLink, Copy, Check, Zap, Gauge, ShieldCheck, Terminal, BookOpen,
 import { models, providers, promptTemplates, scenarios } from '../constants';
 import { cn, formatPrice, formatNumber } from '../lib/utils';
 import { useCompare } from '../hooks/useCompare';
+import { LogoAvatar } from '../components/LogoAvatar';
+import { SubpageHero } from '../components/SubpageHero';
 
 export const ModelDetail = () => {
   const { id } = useParams();
@@ -59,43 +61,86 @@ export const ModelDetail = () => {
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Main Content */}
         <div className="flex-1 min-w-0">
-          {/* Header */}
-          <div className="flex items-start gap-6 mb-12">
-            <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center text-2xl font-bold shrink-0 border border-white/5 shadow-2xl shadow-[#1ed661]/5">
-              {model.name[0]}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                <h1 className="text-4xl font-bold text-white tracking-tighter truncate">{model.name}</h1>
-                <div className="flex items-center gap-3">
-                  <a href={provider.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/10 rounded-xl text-sm font-bold text-zinc-300 hover:bg-zinc-800 hover:border-white/20 transition-all">
-                    访问官网 <ExternalLink size={14} />
-                  </a>
-                  <button 
-                    onClick={() => addToCompare(model.id)}
-                    className={cn(
-                      "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all border",
-                      compareList.includes(model.id) 
-                        ? "bg-[#1ed661]/10 border-[#1ed661]/30 text-[#1ed661]" 
-                        : "bg-zinc-900 border-white/10 text-zinc-300 hover:bg-zinc-800 hover:border-white/20"
-                    )}
-                  >
-                    <Layers size={16} />
-                    {compareList.includes(model.id) ? '已加入对比' : '加入对比'}
-                  </button>
+          <SubpageHero
+            badge="模型详情"
+            title={model.name}
+            description={`${provider.name} · ${model.releaseDate} 发布 · ${model.positioningSummary || model.overview}`}
+            icon={Sparkles}
+          />
+
+          <section className="mb-12 rounded-3xl border border-white/5 bg-zinc-900/30 px-6 py-6 md:px-8 md:py-7">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+              <div className="flex min-w-0 items-start gap-4 md:gap-5">
+                <LogoAvatar
+                  src={model.logo}
+                  alt={model.name}
+                  fallback={model.name[0]}
+                  size="lg"
+                  className="h-16 w-16 shrink-0 rounded-2xl bg-zinc-950 p-2 md:h-20 md:w-20"
+                />
+                <div className="min-w-0">
+                  <h1 className="text-3xl font-bold tracking-tight text-white md:text-5xl">{model.name}</h1>
+                  <p className="mt-3 text-base text-zinc-400">
+                    {provider.name} / {model.releaseDate} 发布
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <span className="text-[10px] px-2 py-0.5 bg-[#1ed661]/10 text-[#1ed661] rounded font-bold uppercase tracking-tighter border border-[#1ed661]/20">{model.modality}</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-purple-500/10 text-purple-400 rounded font-bold uppercase tracking-tighter border border-purple-500/20">{model.isOpenSource ? '开源' : '闭源 API'}</span>
+                    <span className="text-[10px] px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded font-bold uppercase tracking-tighter border border-white/5">{formatNumber(model.contextWindow)} 上下文</span>
+                    {model.openaiCompatible && <span className="text-[10px] px-2 py-0.5 bg-green-500/10 text-green-400 rounded font-bold uppercase tracking-tighter border border-green-500/20">OpenAI 兼容</span>}
+                    <Link to={`/ai-models/providers/${provider.id}`} className="text-[10px] px-2 py-0.5 bg-white/5 text-zinc-300 rounded font-bold uppercase tracking-tighter border border-white/5 hover:text-[#1ed661] transition-colors">
+                      {provider.name}
+                    </Link>
+                  </div>
                 </div>
               </div>
-              <div className="text-zinc-500 mb-6 flex items-center gap-2">
-                <Link to={`/ai-models/providers/${provider.id}`} className="hover:text-[#1ed661] transition-colors">{provider.name}</Link>
-                <span className="opacity-20">/</span>
-                <span>{model.releaseDate} 发布</span>
+
+              <div className="flex shrink-0 flex-wrap items-center gap-3">
+                <a href={provider.website} target="_blank" rel="noopener noreferrer" className="inline-flex h-11 items-center gap-2 rounded-xl bg-zinc-900 px-4 text-sm font-bold text-zinc-300 border border-white/10 transition-all hover:bg-zinc-800 hover:border-white/20">
+                  访问官网 <ExternalLink size={14} />
+                </a>
+                <button
+                  onClick={() => addToCompare(model.id)}
+                  className={cn(
+                    "inline-flex h-11 items-center gap-2 rounded-xl px-4 text-sm font-bold transition-all border",
+                    compareList.includes(model.id)
+                      ? "bg-[#1ed661]/10 border-[#1ed661]/30 text-[#1ed661]"
+                      : "bg-zinc-900 border-white/10 text-zinc-300 hover:bg-zinc-800 hover:border-white/20"
+                  )}
+                >
+                  <Layers size={16} />
+                  {compareList.includes(model.id) ? '已加入对比' : '加入对比'}
+                </button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <span className="text-[10px] px-2 py-0.5 bg-[#1ed661]/10 text-[#1ed661] rounded font-bold uppercase tracking-tighter border border-[#1ed661]/20">{model.modality}</span>
-                <span className="text-[10px] px-2 py-0.5 bg-purple-500/10 text-purple-400 rounded font-bold uppercase tracking-tighter border border-purple-500/20">{model.isOpenSource ? '开源' : '闭源 API'}</span>
-                <span className="text-[10px] px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded font-bold uppercase tracking-tighter border border-white/5">{formatNumber(model.contextWindow)} 上下文</span>
-                {model.openaiCompatible && <span className="text-[10px] px-2 py-0.5 bg-green-500/10 text-green-400 rounded font-bold uppercase tracking-tighter border border-green-500/20">OpenAI 兼容</span>}
+            </div>
+          </section>
+
+          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_260px] gap-6 mb-16">
+            <div className="bg-zinc-900/30 border border-white/5 rounded-2xl p-8">
+              <div className="flex items-center gap-2 mb-4">
+                <Info size={18} className="text-[#1ed661]" />
+                <h2 className="text-2xl font-bold text-white tracking-tight">模型介绍</h2>
               </div>
+              <p className="text-sm text-zinc-300 leading-7 mb-4">
+                {model.overview}
+              </p>
+              <p className="text-sm text-zinc-500 leading-7">
+                {model.positioningSummary}
+              </p>
+            </div>
+            <div className="bg-zinc-900/30 border border-white/5 rounded-2xl p-6">
+              <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-4">核心标签</div>
+              <div className="flex flex-wrap gap-2 mb-6">
+                {model.tags.slice(0, 6).map(tag => (
+                  <span key={tag} className="px-2 py-1 bg-white/5 border border-white/5 rounded-lg text-[10px] text-zinc-300">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <div className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-3">热度原因</div>
+              <p className="text-xs text-zinc-400 leading-6">
+                {model.popularityReason || model.recommendationReason}
+              </p>
             </div>
           </div>
 
@@ -365,12 +410,12 @@ export const ModelDetail = () => {
               <div className="space-y-6">
                 {models.filter(m => m.id !== model.id && m.modality === model.modality).slice(0, 3).map(m => (
                   <Link key={m.id} to={`/ai-models/models/${m.id}`} className="flex items-center gap-4 group">
-                    <div className="w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center text-xs font-bold group-hover:bg-zinc-700 transition-all border border-white/5">
-                      {m.name[0]}
-                    </div>
+                    <LogoAvatar src={m.logo} alt={m.name} fallback={m.name[0]} size="md" className="group-hover:bg-zinc-700 transition-all bg-zinc-950" />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-bold text-zinc-300 truncate group-hover:text-[#1ed661] transition-colors">{m.name}</div>
-                      <div className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest truncate">{m.provider} · ¥{formatPrice(m.pricing.input)}</div>
+                      <div className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest truncate">
+                        {providers.find(providerEntry => providerEntry.id === m.provider)?.name || m.provider} · ¥{formatPrice(m.pricing.input)}
+                      </div>
                     </div>
                   </Link>
                 ))}

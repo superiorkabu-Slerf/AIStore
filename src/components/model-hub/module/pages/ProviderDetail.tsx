@@ -1,15 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ExternalLink, MapPin, ShieldCheck, Layers, ChevronRight, Info, History, LayoutGrid, CheckCircle2, Globe, Cpu, Sparkles, TrendingUp, Clock } from 'lucide-react';
 import { providers, models, trendEvents } from '../constants';
 import { cn, formatPrice } from '../lib/utils';
 import { useCompare } from '../contexts/CompareContext';
+import { LogoAvatar } from '../components/LogoAvatar';
+import { SubpageHero } from '../components/SubpageHero';
 
 export const ProviderDetail = () => {
   const { id } = useParams();
   const provider = providers.find(p => p.id === id);
   const providerModels = models.filter(m => m.provider === id);
   const { addToCompare } = useCompare();
+  const [contentTab, setContentTab] = useState<'models' | 'timeline'>('models');
 
   if (!provider) return <div className="p-20 text-center text-zinc-500">厂商不存在</div>;
 
@@ -28,54 +31,68 @@ export const ProviderDetail = () => {
 
   return (
     <div className="modelhub-page py-4">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row items-start gap-8 mb-16">
-        <div className="w-20 h-20 bg-zinc-900 rounded-2xl flex items-center justify-center p-4 shrink-0 border border-white/5 shadow-2xl shadow-[#1ed661]/5">
-          <img src={provider.logo} alt={provider.name} className="w-full h-full object-contain grayscale hover:grayscale-0 transition-all" referrerPolicy="no-referrer" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-            <h1 className="text-4xl font-bold text-white tracking-tighter">{provider.name}</h1>
-            <a 
-              href={provider.website} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-white/10 rounded-xl text-sm font-bold text-zinc-300 hover:bg-zinc-800 hover:border-white/20 transition-all"
-            >
-              访问官网 <ExternalLink size={14} />
-            </a>
-          </div>
-          <p className="text-[#1ed661] text-sm font-bold mb-4 flex items-center gap-2">
-            <Sparkles size={14} />
-            {provider.positioningSummary}
-          </p>
-          <p className="text-zinc-400 text-lg mb-8 max-w-3xl leading-relaxed">
-            {provider.description}
-          </p>
-          <div className="flex flex-wrap gap-6 text-sm text-zinc-500 mb-8">
-            <div className="flex items-center gap-2">
-              <MapPin size={16} className="text-zinc-700" />
-              {provider.region}
-            </div>
-            <div className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-zinc-700" />
-              {provider.compliance}
-            </div>
-            <div className="flex items-center gap-2">
-              <Layers size={16} className="text-zinc-700" />
-              融资阶段：<span className="text-zinc-300 font-mono">{provider.funding}</span>
+      <SubpageHero
+        badge="厂商详情"
+        title={provider.name}
+        description={`${provider.positioningSummary || ''} ${provider.description}`.trim()}
+        icon={Sparkles}
+      />
+
+      <section className="mb-8 rounded-3xl border border-white/5 bg-zinc-900/30 px-6 py-6 md:px-8 md:py-7">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex min-w-0 items-start gap-4 md:gap-5">
+            <LogoAvatar
+              src={provider.logo}
+              alt={provider.name}
+              fallback={provider.name[0]}
+              size="lg"
+              className="h-16 w-16 shrink-0 rounded-2xl bg-zinc-950 p-2 md:h-20 md:w-20"
+            />
+            <div className="min-w-0">
+              <h1 className="text-3xl font-bold tracking-tight text-white md:text-5xl">{provider.name}</h1>
+              {provider.positioningSummary ? (
+                <p className="mt-3 max-w-4xl text-sm font-medium leading-7 text-[#1ed661] md:text-base">
+                  {provider.positioningSummary}
+                </p>
+              ) : null}
+              <p className="mt-3 max-w-4xl text-base leading-7 text-zinc-400">
+                {provider.description}
+              </p>
             </div>
           </div>
 
-          {/* Capability Tags */}
-          <div className="flex flex-wrap gap-2">
-            {provider.capabilityTags.map(tag => (
-              <span key={tag} className="text-[10px] px-2 py-1 bg-zinc-900 border border-white/5 rounded-lg text-zinc-400 font-bold uppercase tracking-widest">
-                {tag}
-              </span>
-            ))}
-          </div>
+          <a
+            href={provider.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-zinc-900 px-4 text-sm font-bold text-zinc-300 transition-all hover:border-white/20 hover:bg-zinc-800"
+          >
+            访问官网 <ExternalLink size={14} />
+          </a>
         </div>
+      </section>
+
+      <div className="flex flex-wrap gap-6 text-sm text-zinc-500 mb-8">
+        <div className="flex items-center gap-2">
+          <MapPin size={16} className="text-zinc-700" />
+          {provider.region}
+        </div>
+        <div className="flex items-center gap-2">
+          <ShieldCheck size={16} className="text-zinc-700" />
+          {provider.compliance}
+        </div>
+        <div className="flex items-center gap-2">
+          <Layers size={16} className="text-zinc-700" />
+          融资阶段：<span className="text-zinc-300 font-mono">{provider.funding}</span>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-16">
+        {provider.capabilityTags.map(tag => (
+          <span key={tag} className="text-[10px] px-2 py-1 bg-zinc-900 border border-white/5 rounded-lg text-zinc-400 font-bold uppercase tracking-widest">
+            {tag}
+          </span>
+        ))}
       </div>
 
       {/* Stats Summary */}
@@ -138,9 +155,7 @@ export const ProviderDetail = () => {
             <div key={m.id} className="bg-zinc-900/40 border border-white/5 rounded-3xl p-8 flex flex-col gap-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-zinc-800 rounded-2xl flex items-center justify-center text-lg font-bold border border-white/5">
-                    {m.name[0]}
-                  </div>
+                  <LogoAvatar src={m.logo} alt={m.name} fallback={m.name[0]} size="lg" className="bg-zinc-950" />
                   <div>
                     <h3 className="text-xl font-bold text-white">{m.name}</h3>
                     <p className="text-xs text-zinc-500 mt-1">{i === 0 ? '适合高精度复杂任务' : '适合大规模低成本调用'}</p>
@@ -164,71 +179,95 @@ export const ProviderDetail = () => {
         </div>
       </div>
 
-      {/* Timeline - Version and Price Dynamics */}
       <div className="mb-16">
-        <div className="flex items-center gap-3 mb-8">
-          <History className="text-purple-400" size={24} />
-          <h2 className="text-2xl font-bold text-white tracking-tight">版本与价格动态</h2>
-        </div>
-        <div className="relative pl-8 border-l border-white/10 space-y-12">
-          {providerEvents.length > 0 ? providerEvents.map((event, i) => (
-            <div key={i} className="relative">
-              <div className="absolute -left-[41px] top-1.5 w-4 h-4 rounded-full bg-zinc-950 border-2 border-purple-500" />
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <div className="text-xs font-mono text-zinc-500 mb-1">{event.date}</div>
-                  <h3 className="text-lg font-bold text-white mb-2">{event.title}</h3>
-                  <p className="text-sm text-zinc-400 max-w-2xl">{event.reason}</p>
-                </div>
-                <Link 
-                  to={event.actionUrl}
-                  className="px-4 py-2 bg-zinc-900 border border-white/10 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all whitespace-nowrap"
-                >
-                  {event.ctaLabel}
-                </Link>
-              </div>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5 mb-6">
+          <div className="flex items-center gap-3">
+            {contentTab === 'models' ? <LayoutGrid className="text-[#1ed661]" size={24} /> : <History className="text-purple-400" size={24} />}
+            <div>
+              <h3 className="text-2xl font-bold text-white tracking-tight">模型目录与动态</h3>
+              <p className="text-sm text-zinc-500 mt-1">
+                默认展示全部模型列表，也可以切换查看该厂商近期的版本与价格动态。
+              </p>
             </div>
-          )) : (
-            <div className="text-zinc-600 text-sm">暂无近期动态</div>
-          )}
-        </div>
-      </div>
-
-      {/* All Models List */}
-      <div className="mb-16">
-        <h3 className="text-lg font-bold text-white tracking-tight mb-6">全部模型列表</h3>
-        <div className="grid grid-cols-1 gap-3">
-          {providerModels.map(model => (
-            <Link 
-              key={model.id} 
-              to={`/ai-models/models/${model.id}`}
-              className="group flex items-center gap-4 p-4 bg-zinc-900/50 border border-white/5 rounded-2xl hover:bg-zinc-900 transition-all"
+          </div>
+          <div className="inline-flex items-center p-1 bg-zinc-900/70 border border-white/10 rounded-2xl">
+            <button
+              onClick={() => setContentTab('models')}
+              className={cn(
+                'px-4 py-2 rounded-xl text-sm font-bold transition-all',
+                contentTab === 'models' ? 'bg-[#1ed661] text-black shadow-lg shadow-[#1ed661]/20' : 'text-zinc-400 hover:text-white'
+              )}
             >
-              <div className="w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 border border-white/5">
-                {model.name[0]}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-white truncate">{model.name}</span>
-                  {model.pricing.freeTier && <span className="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest">免费</span>}
-                </div>
-                <div className="text-[10px] text-zinc-500 uppercase tracking-widest">{model.modality} · {model.releaseDate}</div>
-              </div>
-              <div className="hidden md:flex flex-col items-end w-24">
-                <span className="text-[10px] px-2 py-0.5 bg-[#1ed661]/10 text-[#1ed661] rounded font-bold uppercase tracking-tighter">{model.modality}</span>
-              </div>
-              <div className="hidden lg:flex flex-col items-end w-24">
-                <span className="text-[10px] text-zinc-600 uppercase tracking-widest mb-0.5">上下文</span>
-                <span className="text-sm font-bold font-mono text-zinc-300">{model.contextWindow / 1000}K</span>
-              </div>
-              <div className="flex flex-col items-end w-28">
-                <span className="text-[10px] text-zinc-600 uppercase tracking-widest mb-0.5">输入价格</span>
-                <span className="text-sm font-bold font-mono text-zinc-300">¥{formatPrice(model.pricing.input)}/百万</span>
-              </div>
-              <ChevronRight size={16} className="text-zinc-700 group-hover:text-zinc-400 transition-colors" />
-            </Link>
-          ))}
+              全部模型列表
+            </button>
+            <button
+              onClick={() => setContentTab('timeline')}
+              className={cn(
+                'px-4 py-2 rounded-xl text-sm font-bold transition-all',
+                contentTab === 'timeline' ? 'bg-white text-black' : 'text-zinc-400 hover:text-white'
+              )}
+            >
+              版本与价格动态
+            </button>
+          </div>
         </div>
+
+        {contentTab === 'models' ? (
+          <div className="grid grid-cols-1 gap-3">
+            {providerModels.map(model => (
+              <Link 
+                key={model.id} 
+                to={`/ai-models/models/${model.id}`}
+                className="group flex items-center gap-4 p-4 bg-zinc-900/50 border border-white/5 rounded-2xl hover:bg-zinc-900 transition-all"
+              >
+                <LogoAvatar src={model.logo} alt={model.name} fallback={model.name[0]} size="md" className="bg-zinc-950" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white truncate">{model.name}</span>
+                    {model.pricing.freeTier && <span className="text-[10px] bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded font-bold uppercase tracking-widest">免费</span>}
+                  </div>
+                  <div className="text-[10px] text-zinc-500 uppercase tracking-widest">{model.modality} · {model.releaseDate}</div>
+                  <div className="text-xs text-zinc-500 mt-1 line-clamp-1">{model.positioningSummary}</div>
+                </div>
+                <div className="hidden md:flex flex-col items-end w-24">
+                  <span className="text-[10px] px-2 py-0.5 bg-[#1ed661]/10 text-[#1ed661] rounded font-bold uppercase tracking-tighter">{model.modality}</span>
+                </div>
+                <div className="hidden lg:flex flex-col items-end w-24">
+                  <span className="text-[10px] text-zinc-600 uppercase tracking-widest mb-0.5">上下文</span>
+                  <span className="text-sm font-bold font-mono text-zinc-300">{model.contextWindow / 1000}K</span>
+                </div>
+                <div className="flex flex-col items-end w-28">
+                  <span className="text-[10px] text-zinc-600 uppercase tracking-widest mb-0.5">输入价格</span>
+                  <span className="text-sm font-bold font-mono text-zinc-300">¥{formatPrice(model.pricing.input)}/百万</span>
+                </div>
+                <ChevronRight size={16} className="text-zinc-700 group-hover:text-zinc-400 transition-colors" />
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="relative pl-8 border-l border-white/10 space-y-12">
+            {providerEvents.length > 0 ? providerEvents.map((event, i) => (
+              <div key={i} className="relative">
+                <div className="absolute -left-[41px] top-1.5 w-4 h-4 rounded-full bg-zinc-950 border-2 border-purple-500" />
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div>
+                    <div className="text-xs font-mono text-zinc-500 mb-1">{event.date}</div>
+                    <h3 className="text-lg font-bold text-white mb-2">{event.title}</h3>
+                    <p className="text-sm text-zinc-400 max-w-2xl">{event.reason}</p>
+                  </div>
+                  <Link 
+                    to={event.actionUrl}
+                    className="px-4 py-2 bg-zinc-900 border border-white/10 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all whitespace-nowrap"
+                  >
+                    {event.ctaLabel}
+                  </Link>
+                </div>
+              </div>
+            )) : (
+              <div className="text-zinc-600 text-sm">暂无近期动态</div>
+            )}
+          </div>
+        )}
       </div>
 
     </div>

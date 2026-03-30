@@ -4,6 +4,9 @@ import { toast } from 'sonner';
 import { X, Plus, Search, Check, Copy, Download, Share2, Star, Layers, Filter, Zap, DollarSign, Sparkles, TrendingUp, Info, ChevronRight, Scale, Trophy } from 'lucide-react';
 import { models, providers } from '../constants';
 import { cn, formatPrice, formatNumber } from '../lib/utils';
+import { LogoAvatar } from '../components/LogoAvatar';
+import { SubpageHero } from '../components/SubpageHero';
+import { SubpageIntro } from '../components/SubpageIntro';
 
 export const Compare = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -125,10 +128,17 @@ export const Compare = () => {
 
   return (
     <div className="modelhub-page py-4">
-      <div className="mb-12">
-        <h1 className="text-4xl font-bold tracking-tighter mb-2 text-white">模型深度对比 <span className="text-zinc-500 font-normal text-2xl ml-2">Compare</span></h1>
-        <p className="text-zinc-400 text-base max-w-2xl">横向评测各维度参数，基于实时计费与性能基准，助您做出最优决策。</p>
-      </div>
+      <SubpageHero
+        badge="深度对比"
+        title="模型深度对比"
+        description="横向比较模型的价格、性能、上下文与兼容性，从多个维度快速选出最适合当前业务的组合。"
+        icon={Layers}
+      />
+      <SubpageIntro
+        title="深度对比"
+        description="把多个模型放在同一张对比表里查看价格、性能、上下文和兼容性差异，适合做方案评估、预算平衡和最终选型。"
+        highlights={['横向比较多个模型', '聚焦价格或性能', '快速找到差异项']}
+      />
 
       {/* Recommendation Cards */}
       {recommendations && (
@@ -151,12 +161,12 @@ export const Compare = () => {
                   <h3 className="text-sm font-bold text-white">{rec.title}</h3>
                 </div>
                 <div className="flex items-center gap-3 py-2">
-                  <div className="w-10 h-10 bg-zinc-800 rounded-lg flex items-center justify-center text-xs font-bold border border-white/5">
-                    {rec.model?.name[0]}
-                  </div>
+                  <LogoAvatar src={rec.model?.logo} alt={rec.model?.name || ''} fallback={rec.model?.name?.[0] || '?'} size="md" className="bg-zinc-950" />
                   <div>
                     <div className="text-sm font-bold text-white">{rec.model?.name}</div>
-                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest">{rec.model?.provider}</div>
+                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest">
+                      {providers.find(provider => provider.id === rec.model?.provider)?.name || rec.model?.provider}
+                    </div>
                   </div>
                 </div>
                 <p className="text-xs text-zinc-500 leading-relaxed">{rec.desc}</p>
@@ -174,9 +184,7 @@ export const Compare = () => {
         <div className="flex flex-wrap items-center gap-3">
           {selectedModels.map(model => (
             <div key={model!.id} className="flex items-center gap-2 px-3 h-10 bg-zinc-900 border border-white/10 rounded-full group">
-              <div className="w-6 h-6 bg-zinc-800 rounded-full flex items-center justify-center text-[10px] font-bold border border-white/5">
-                {model!.name[0]}
-              </div>
+              <LogoAvatar src={model!.logo} alt={model!.name} fallback={model!.name[0]} size="sm" className="rounded-full bg-zinc-950" />
               <span className="text-sm font-medium text-white">{model!.name}</span>
               <button 
                 onClick={() => removeModel(model!.id)}
@@ -371,10 +379,10 @@ export const Compare = () => {
                   onClick={() => addModel(m.id)}
                   className="w-full flex items-center gap-4 px-4 py-3 hover:bg-white/5 rounded-xl transition-all text-left group"
                 >
-                  <div className="w-10 h-10 bg-zinc-800 rounded-lg flex items-center justify-center text-sm font-bold border border-white/5 group-hover:border-white/10 transition-all">{m.name[0]}</div>
+                  <LogoAvatar src={m.logo} alt={m.name} fallback={m.name[0]} size="md" className="group-hover:border-white/10 transition-all bg-zinc-950" />
                   <div className="flex-1">
                     <div className="text-sm font-bold text-white group-hover:text-[#1ed661] transition-colors">{m.name}</div>
-                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5">{m.provider}</div>
+                    <div className="text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5">{providers.find(provider => provider.id === m.provider)?.name || m.provider}</div>
                   </div>
                   <div className="w-8 h-8 rounded-full border border-white/5 flex items-center justify-center text-zinc-600 group-hover:text-white group-hover:border-white/20 transition-all">
                     <Plus size={16} />

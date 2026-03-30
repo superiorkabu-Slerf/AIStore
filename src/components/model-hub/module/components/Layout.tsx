@@ -84,12 +84,12 @@ export function CompareToolbar() {
   const selectedModels = compareList.map((id) => models.find((item) => item.id === id)).filter(Boolean);
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-[40] h-16 border-t border-white/10 bg-[#111923]/92 backdrop-blur-xl">
-      <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-6">
-        <div className="flex min-w-0 items-center gap-4">
+    <div className="fixed bottom-0 left-0 right-0 z-[40] h-16 border-t border-white/10 bg-zinc-900/95 backdrop-blur-xl transition-transform duration-200 ease-out translate-y-0">
+      <div className="mx-auto flex h-full max-w-7xl items-center justify-between gap-4 px-8">
+        <div className="flex min-w-0 items-center gap-3 overflow-x-auto no-scrollbar">
           <div className="hidden items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-white/34 md:flex">
-            <Layers size={14} className="text-[#1ed661]" />
-            对比栏 ({compareList.length}/4)
+            <Layers size={14} className="text-blue-400" />
+            已选模型
           </div>
           <div className="no-scrollbar flex min-w-0 items-center gap-2 overflow-x-auto">
             {selectedModels.map((model) => (
@@ -97,10 +97,13 @@ export function CompareToolbar() {
                 key={model!.id}
                 className="flex shrink-0 items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5"
               >
-                <div className="grid h-6 w-6 place-items-center rounded-full bg-[#161b22] text-[10px] font-bold text-white/90">
-                  {model!.name[0]}
-                </div>
-                <span className="text-xs font-medium text-white/72">{model!.name}</span>
+                <img
+                  src={model!.logo}
+                  alt={model!.name}
+                  className="h-5 w-5 rounded-full border border-white/10 bg-zinc-950 object-contain p-0.5"
+                  referrerPolicy="no-referrer"
+                />
+                <span className="text-sm font-medium text-white/72">{model!.name}</span>
                 <button
                   type="button"
                   onClick={() => removeFromCompare(model!.id)}
@@ -124,7 +127,7 @@ export function CompareToolbar() {
           <button
             type="button"
             onClick={() => navigate(`/ai-models/compare?models=${compareList.join(',')}`)}
-            className="inline-flex h-10 items-center gap-2 rounded-full bg-[#1ed661] px-5 text-sm font-bold text-black transition-all hover:brightness-110"
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-blue-500 px-5 text-sm font-medium text-white transition-colors hover:bg-blue-600"
           >
             开始对比
             <Layers size={15} />
@@ -136,37 +139,13 @@ export function CompareToolbar() {
 }
 
 export function FloatingCompareButton() {
-  const { compareList } = useCompare();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  if (compareList.length === 0 || location.pathname === '/ai-models/compare') return null;
-
-  return (
-    <button
-      type="button"
-      onClick={() => navigate(`/ai-models/compare?models=${compareList.join(',')}`)}
-      className="fixed bottom-24 right-8 z-[60] flex items-center gap-3 rounded-full bg-[#1ed661] px-5 py-4 text-black shadow-[0_0_32px_rgba(30,214,97,0.26)] transition-all hover:scale-[1.02] hover:brightness-110"
-    >
-      <div className="relative">
-        <Layers size={22} />
-        <span className="absolute -top-2 -right-2 grid h-5 w-5 place-items-center rounded-full border border-black/20 bg-white text-[10px] font-black text-black">
-          {compareList.length}
-        </span>
-      </div>
-      <div className="flex flex-col items-start">
-        <span className="text-sm font-black leading-none">进入对比</span>
-        <span className="text-[11px] leading-none text-black/62">查看模型横向差异</span>
-      </div>
-    </button>
-  );
+  return null;
 }
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen">
       <main className="mx-auto max-w-7xl px-6 pb-16 pt-8">
-        <Breadcrumbs />
         {children}
       </main>
       <CompareToolbar />

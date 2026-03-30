@@ -7,6 +7,7 @@ import { SearchModal } from './module/components/SearchModal';
 import { CompareProvider } from './module/contexts/CompareContext';
 import { Compare } from './module/pages/Compare';
 import { Discover } from './module/pages/Discover';
+import { FreeZone } from './module/pages/FreeZone';
 import { ModelDetail } from './module/pages/ModelDetail';
 import { ProviderDetail } from './module/pages/ProviderDetail';
 import { ProviderEcosystem } from './module/pages/ProviderEcosystem';
@@ -38,6 +39,7 @@ export default function ModelHubModule() {
               <Route path="/" element={<Navigate to="/ai-models/providers" replace />} />
               <Route path="/ai-models" element={<Navigate to="/ai-models/providers" replace />} />
               <Route path="/ai-models/discover" element={<Discover />} />
+              <Route path="/ai-models/free-zone" element={<FreeZone />} />
               <Route path="/ai-models/providers" element={<Providers />} />
               <Route path="/ai-models/providers/:id" element={<ProviderDetail />} />
               <Route path="/ai-models/models/:id" element={<ModelDetail />} />

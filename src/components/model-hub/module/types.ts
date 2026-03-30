@@ -17,6 +17,7 @@ export interface Provider {
 export interface Model {
   id: string;
   name: string;
+  logo: string;
   provider: string; // providerId
   modelType: string; // e.g., 'LLM', 'Image', 'Audio'
   modality: string;
@@ -24,6 +25,8 @@ export interface Model {
   contextWindow: number;
   maxOutput: number;
   positioningSummary?: string; // One-line summary
+  overview: string;
+  popularityReason?: string;
   riskWarning?: string; // Short risk warning
   pricing: {
     input: number; // ¥ per million tokens
@@ -92,4 +95,17 @@ export interface TrendEvent {
   actionUrl?: string;
   type: 'price_drop' | 'new_release' | 'alternative' | 'hot_scenario' | 'long_context' | 'low_cost';
   ctaLabel: string;
+}
+
+export interface FreeModelEntry {
+  id: string;
+  name: string;
+  provider: string;
+  logo: string;
+  subtitle: string;
+  description: string;
+  tags: string[];
+  category: '对话' | '推理' | '办公' | '视频' | '设计' | '长文本';
+  freeType: string;
+  website: string;
 }

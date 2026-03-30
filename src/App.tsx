@@ -924,6 +924,7 @@ export default function App() {
   const [articleReadProgress, setArticleReadProgress] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [isNewsMenuOpen, setIsNewsMenuOpen] = useState(false);
+  const [isModelHubMenuOpen, setIsModelHubMenuOpen] = useState(false);
   const [featuredSlideIndex, setFeaturedSlideIndex] = useState(0);
   const [glossaryOffset, setGlossaryOffset] = useState(0);
   const [recommendOffset, setRecommendOffset] = useState(0);
@@ -1022,6 +1023,7 @@ export default function App() {
     const handleHashChange = () => {
       setHash(window.location.hash || '#/');
       setIsNewsMenuOpen(false);
+      setIsModelHubMenuOpen(false);
     };
 
     window.addEventListener('hashchange', handleHashChange);
@@ -2445,7 +2447,39 @@ export default function App() {
             <a href="#/" className={cn('text-sm font-medium transition-colors', view === 'home' ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>首页</a>
             <a href="#/section/skill" className={cn('text-sm font-medium transition-colors', hash.startsWith('#/section/skill') ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>Skill</a>
             <a href="#/section/mcp" className={cn('text-sm font-medium transition-colors', hash.startsWith('#/section/mcp') ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>MCP</a>
-            <a href="#/model-hub/ai-models/providers" className={cn('text-sm font-medium transition-colors', view === 'model_hub' ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>大模型</a>
+            <div
+              className="relative"
+              onMouseEnter={() => setIsModelHubMenuOpen(true)}
+              onMouseLeave={() => setIsModelHubMenuOpen(false)}
+            >
+              <button
+                onClick={() => {
+                  window.location.hash = '#/model-hub/ai-models/providers';
+                }}
+                className={cn(
+                  'flex items-center gap-1 text-sm font-medium transition-colors',
+                  view === 'model_hub'
+                    ? 'text-[#1ed661]'
+                    : 'text-gray-400 hover:text-[#1ed661]'
+                )}
+              >
+                模型广场
+                <ChevronDown size={14} className={cn('transition-transform', isModelHubMenuOpen ? 'rotate-180' : 'rotate-0')} />
+              </button>
+              <div className="absolute left-0 right-0 top-full h-3" />
+              <div
+                className={cn(
+                  'absolute left-1/2 top-full mt-2 w-48 -translate-x-1/2 rounded-2xl border border-white/10 bg-[#161b22]/95 p-2 shadow-2xl backdrop-blur-md transition-all duration-150',
+                  isModelHubMenuOpen ? 'opacity-100 pointer-events-auto translate-y-0' : 'opacity-0 pointer-events-none -translate-y-1'
+                )}
+              >
+                <button onClick={() => (window.location.hash = '#/model-hub/ai-models/free-zone')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">免费专区</button>
+                <button onClick={() => (window.location.hash = '#/model-hub/ai-models/discover')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">模型发现</button>
+                <button onClick={() => (window.location.hash = '#/model-hub/ai-models/rankings')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">风云榜单</button>
+                <button onClick={() => (window.location.hash = '#/model-hub/ai-models/compare')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">深度对比</button>
+                <button onClick={() => (window.location.hash = '#/model-hub/ai-models/ecosystem')} className="w-full text-left block rounded-xl px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-[#1ed661] transition-colors">厂商生态</button>
+              </div>
+            </div>
 
             <div
               className="relative"

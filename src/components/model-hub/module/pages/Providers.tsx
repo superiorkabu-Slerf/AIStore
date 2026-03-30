@@ -1,495 +1,790 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MapPin, Layers, ChevronRight, ShieldCheck, Search, Sparkles, ArrowRight, Filter, LayoutGrid, List, ChevronLeft, ExternalLink, Trophy, TrendingUp, Clock, Compass, TrendingDown } from 'lucide-react';
+import {
+  ArrowRight,
+  Clock,
+  Compass,
+  Filter,
+  Gift,
+  LayoutGrid,
+  List,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Trophy,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react';
 import { providers, models } from '../constants';
 import { cn, formatPrice } from '../lib/utils';
-import { useRotatingPlaceholder } from '../hooks/useRotatingPlaceholder';
 import { useCompare } from '../hooks/useCompare';
+import { useRotatingPlaceholder } from '../hooks/useRotatingPlaceholder';
+import { LogoAvatar } from '../components/LogoAvatar';
+
+type ModalityFilter = '全部' | '纯文本' | '多模态' | '图像生成';
+type OpenSourceFilter = '全部' | '闭源 API' | '开源可部署';
+type ContextFilter = '全部' | '8K以下' | '8K-32K' | '32K-128K' | '128K+';
+type SortFilter = '综合推荐' | '最新发布' | '价格最低';
+type ViewMode = 'list' | 'grid';
+type QuickTag = '全部' | '文本生成' | '多模态' | '图像生成' | '代码专精' | '含免费额度';
+type RankingTab = '综合能力' | '代码能力' | '性价比';
+
+const QUICK_TAGS: QuickTag[] = ['全部', '文本生成', '多模态', '图像生成', '代码专精', '含免费额度'];
+const CONTEXT_OPTIONS: ContextFilter[] = ['全部', '8K以下', '8K-32K', '32K-128K', '128K+'];
+const GRID_PAGE_SIZE = 8;
+const LIST_PAGE_SIZE = 10;
 
 export const Providers = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const placeholder = useRotatingPlaceholder();
-  const [selectedType, setSelectedType] = useState('全部');
-  const [selectedScenario, setSelectedScenario] = useState('全部');
   const navigate = useNavigate();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const modelListRef = useRef<HTMLElement>(null);
   const { addToCompare, compareList } = useCompare();
+  const placeholder = useRotatingPlaceholder();
 
-  const modelTypes = ['全部', '对话', '生图', '嵌入', '重排序', '语音', '视频'];
-  const scenarios = [
-    '全部', 'RAG', '通用助手', '旗舰全能', '文案创作', '长文本处理', '数学推理', 
-    'Vibe Coding', '快速响应', '多模态理解 / 识别', '语音合成', '语音交互', 
-    '图像生成', '图像编辑', '视频生成', 'AIGC 内容创作', '游戏互动', 
-    '角色扮演', '内容翻译', '领域知识综合'
-  ];
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeQuickTag, setActiveQuickTag] = useState<QuickTag>('全部');
+  const [selectedModality, setSelectedModality] = useState<ModalityFilter>('全部');
+  const [selectedOpenSource, setSelectedOpenSource] = useState<OpenSourceFilter>('全部');
+  const [selectedContext, setSelectedContext] = useState<ContextFilter>('全部');
+  const [minPrice, setMinPrice] = useState(0);
+  const [maxPrice, setMaxPrice] = useState(500);
+  const [sortBy, setSortBy] = useState<SortFilter>('综合推荐');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [rankingTab, setRankingTab] = useState<RankingTab>('综合能力');
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const filteredModels = useMemo(() => {
-    return models.filter(m => {
-      const matchesSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           m.provider.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesType = selectedType === '全部' || m.modality === selectedType || (selectedType === '对话' && (m.modality === '纯文本' || m.modality === '多模态'));
-      const matchesScenario = selectedScenario === '全部' || m.scenarios.includes(selectedScenario) || m.tags.includes(selectedScenario);
-      return matchesSearch && matchesType && matchesScenario;
-    });
-  }, [searchQuery, selectedType, selectedScenario]);
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === 'k' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
 
-  const hotModels = ['DeepSeek-R1', 'Qwen2-VL-72B-Instruct', 'GLM-4-7B', 'Kimi-k1.5', 'MiniMax-M2'];
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeQuickTag, maxPrice, minPrice, searchQuery, selectedContext, selectedModality, selectedOpenSource, sortBy, viewMode]);
 
   const shortcuts = [
-    { name: '模型发现', desc: '按需求筛选合适模型', icon: Compass, path: '/ai-models/discover', color: 'text-[#1ed661]', bg: 'bg-[#1ed661]/10' },
-    { name: '风云榜单', desc: '查看价格与性能趋势', icon: Trophy, path: '/ai-models/rankings', color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
-    { name: '深度对比', desc: '快速比较多个模型差异', icon: Layers, path: '/ai-models/compare', color: 'text-purple-500', bg: 'bg-purple-500/10' },
-    { name: '厂商生态', desc: '查看厂商矩阵与选型建议', icon: ShieldCheck, path: '/ai-models/ecosystem', color: 'text-green-500', bg: 'bg-green-500/10' },
+    { name: '模型发现', desc: '按需求筛选合适模型', path: '/ai-models/discover', icon: Compass, color: 'text-[#1ed661]', bg: 'bg-[#1ed661]/10' },
+    { name: '风云榜单', desc: '查看价格与性能趋势', path: '/ai-models/rankings', icon: Trophy, color: 'text-sky-400', bg: 'bg-sky-500/10' },
+    { name: '深度对比', desc: '快速比较多个模型差异', path: '/ai-models/compare', icon: Sparkles, color: 'text-violet-400', bg: 'bg-violet-500/10' },
+    { name: '厂商生态', desc: '查看厂商矩阵与选型建议', path: '/ai-models/ecosystem', icon: ShieldCheck, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+    { name: '免费专区', desc: '收录国产免费模型入口', path: '/ai-models/free-zone', icon: Gift, color: 'text-green-400', bg: 'bg-green-500/10' },
   ];
 
-  // Dashboard data
-  const bestValueModels = useMemo(() => [...models]
-    .sort((a, b) => (a.pricing.output / a.eloScore) - (b.pricing.output / b.eloScore))
-    .slice(0, 3), []);
-
-  const recentUpdates = useMemo(() => models.slice(0, 3).map((m, i) => ({
-    ...m,
-    updateType: i === 0 ? 'new' : 'price_drop',
-    updateLabel: i === 0 ? '新发布' : '价格下调',
-    actionLabel: i === 0 ? '查看详情' : '查看替代方案'
-  })), []);
-
-  const handleShortcutClick = (path: string, name: string) => {
-    if (name === '模型发现') {
-      navigate('/ai-models/discover', { state: { focusSearch: true } });
-    } else if (name === '风云榜单') {
-      navigate('/ai-models/rankings');
-    } else if (name === '深度对比') {
-      if (compareList.length === 0) {
-        // Add default models if pool is empty
-        const defaultModels = models.slice(0, 2);
-        defaultModels.forEach(m => addToCompare(m.id));
-      }
+  const handleShortcutClick = (name: string, path: string) => {
+    if (name === '深度对比' && compareList.length === 0) {
+      ['gpt-4o', 'deepseek-v3'].forEach(id => addToCompare(id));
       navigate('/ai-models/compare?models=gpt-4o,deepseek-v3');
-    } else {
-      navigate(path);
+      return;
+    }
+
+    navigate(path);
+  };
+
+  const handleQuickTagClick = (tag: QuickTag) => {
+    setActiveQuickTag(tag);
+
+    if (tag === '含免费额度' || tag === '代码专精' || tag === '图像生成' || tag === '多模态' || tag === '文本生成') {
+      requestAnimationFrame(() => {
+        modelListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
     }
   };
 
+  const resetFilters = () => {
+    setSearchQuery('');
+    setActiveQuickTag('全部');
+    setSelectedModality('全部');
+    setSelectedOpenSource('全部');
+    setSelectedContext('全部');
+    setMinPrice(0);
+    setMaxPrice(500);
+    setSortBy('综合推荐');
+  };
+
+  const filteredModels = useMemo(() => {
+    const list = models.filter(model => {
+      const provider = providers.find(item => item.id === model.provider);
+      const normalizedSearch = searchQuery.trim().toLowerCase();
+      const matchesSearch =
+        normalizedSearch.length === 0 ||
+        model.name.toLowerCase().includes(normalizedSearch) ||
+        provider?.name.toLowerCase().includes(normalizedSearch) ||
+        model.tags.some(tag => tag.toLowerCase().includes(normalizedSearch)) ||
+        model.overview.toLowerCase().includes(normalizedSearch);
+
+      const matchesModality =
+        selectedModality === '全部' ||
+        model.modality === selectedModality;
+
+      const matchesOpenSource =
+        selectedOpenSource === '全部' ||
+        (selectedOpenSource === '闭源 API' && !model.isOpenSource) ||
+        (selectedOpenSource === '开源可部署' && model.isOpenSource);
+
+      const matchesContext =
+        selectedContext === '全部' ||
+        (selectedContext === '8K以下' && model.contextWindow > 0 && model.contextWindow < 8000) ||
+        (selectedContext === '8K-32K' && model.contextWindow >= 8000 && model.contextWindow < 32000) ||
+        (selectedContext === '32K-128K' && model.contextWindow >= 32000 && model.contextWindow < 128000) ||
+        (selectedContext === '128K+' && model.contextWindow >= 128000);
+
+      const matchesPrice = model.pricing.output >= minPrice && model.pricing.output <= maxPrice;
+
+      const matchesQuickTag =
+        activeQuickTag === '全部' ||
+        (activeQuickTag === '文本生成' && (model.modality === '纯文本' || model.modality === '多模态')) ||
+        (activeQuickTag === '多模态' && model.modality === '多模态') ||
+        (activeQuickTag === '图像生成' && model.modality === '图像生成') ||
+        (activeQuickTag === '代码专精' && (model.tags.includes('代码生成') || model.scenarios.includes('代码开发'))) ||
+        (activeQuickTag === '含免费额度' && Boolean(model.pricing.freeTier));
+
+      return matchesSearch && matchesModality && matchesOpenSource && matchesContext && matchesPrice && matchesQuickTag;
+    });
+
+    return list.sort((a, b) => {
+      if (sortBy === '最新发布') return new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime();
+      if (sortBy === '价格最低') return a.pricing.output - b.pricing.output;
+
+      const scoreA = a.eloScore + (a.pricing.freeTier ? 24 : 0) + (a.openaiCompatible ? 10 : 0);
+      const scoreB = b.eloScore + (b.pricing.freeTier ? 24 : 0) + (b.openaiCompatible ? 10 : 0);
+      return scoreB - scoreA;
+    });
+  }, [activeQuickTag, maxPrice, minPrice, searchQuery, selectedContext, selectedModality, selectedOpenSource, sortBy]);
+
+  const bestValueModels = useMemo(() => {
+    return [...models]
+      .filter(model => model.pricing.output > 0 && model.performance.mmlu > 0)
+      .sort((a, b) => (b.performance.mmlu / b.pricing.output) - (a.performance.mmlu / a.pricing.output))
+      .slice(0, 3);
+  }, []);
+
+  const recentUpdates = useMemo(
+    () =>
+      [
+        { modelId: 'deepseek-r1', updateType: 'new', updateLabel: '新发布', actionLabel: '查看详情', summary: '推理能力提升，成为热门开源推理选项。' },
+        { modelId: 'gpt-4o-mini', updateType: 'price_drop', updateLabel: '价格下调', actionLabel: '查看替代方案', summary: '轻量级通用任务成本更低，适合客服和自动化。' },
+        { modelId: 'deepseek-v3', updateType: 'new', updateLabel: '热度上升', actionLabel: '查看详情', summary: '中文场景和成本表现持续拉高讨论度。' },
+      ]
+        .map(item => {
+          const model = models.find(entry => entry.id === item.modelId);
+          return model ? { ...model, ...item } : null;
+        })
+        .filter((item): item is NonNullable<typeof item> => Boolean(item)),
+    [],
+  );
+
+  const hotModels = useMemo(() => {
+    return ['gpt-4o', 'claude-3-5-sonnet', 'deepseek-r1']
+      .map(id => models.find(model => model.id === id))
+      .filter((model): model is NonNullable<typeof model> => Boolean(model));
+  }, []);
+
+  const topProviders = useMemo(() => providers.slice(0, 8), []);
+
+  const rankingRows = useMemo(() => {
+    const rankingSources: Record<RankingTab, { scoreLabel: string; getScore: (model: typeof models[number]) => number }> = {
+      '综合能力': { scoreLabel: 'MMLU', getScore: (model) => model.performance.mmlu || 0 },
+      '代码能力': { scoreLabel: 'HumanEval', getScore: (model) => model.performance.humaneval || 0 },
+      '性价比': { scoreLabel: 'Value', getScore: (model) => Number((model.eloScore / Math.max(model.pricing.output, 1)).toFixed(2)) },
+    };
+
+    const source = rankingSources[rankingTab];
+
+    return [...models]
+      .filter(model => source.getScore(model) > 0)
+      .sort((a, b) => source.getScore(b) - source.getScore(a))
+      .slice(0, 5)
+      .map(model => ({
+        model,
+        scoreLabel: source.scoreLabel,
+        score: source.getScore(model),
+      }));
+  }, [rankingTab]);
+
+  const getRankAccent = (index: number) => {
+    if (index === 0) return 'text-amber-400';
+    if (index === 1) return 'text-zinc-300';
+    if (index === 2) return 'text-orange-400';
+    return 'text-zinc-500';
+  };
+
+  const getRankMarker = (index: number) => {
+    if (index === 0) return '🥇';
+    if (index === 1) return '🥈';
+    if (index === 2) return '🥉';
+    return `${index + 1}`;
+  };
+
+  const renderCompareButton = (modelId: string) => {
+    const isSelected = compareList.includes(modelId);
+    return (
+      <button
+        type="button"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (!isSelected) addToCompare(modelId);
+        }}
+        className={cn(
+          'text-xs transition-colors',
+          isSelected ? 'text-blue-400' : 'text-zinc-500 hover:text-white'
+        )}
+      >
+        {isSelected ? '✓ 已加入' : '加入对比'}
+      </button>
+    );
+  };
+
+  const handleHeroSearch = () => {
+    const trimmedQuery = searchQuery.trim();
+    const search = trimmedQuery ? `?q=${encodeURIComponent(trimmedQuery)}` : '';
+    navigate(`/ai-models/discover${search}`, {
+      state: {
+        focusSearch: true,
+        autoRecommend: Boolean(trimmedQuery),
+      },
+    });
+  };
+
+  const pageSize = viewMode === 'grid' ? GRID_PAGE_SIZE : LIST_PAGE_SIZE;
+  const totalPages = Math.max(1, Math.ceil(filteredModels.length / pageSize));
+  const currentPageSafe = Math.min(currentPage, totalPages);
+  const paginatedModels = filteredModels.slice((currentPageSafe - 1) * pageSize, currentPageSafe * pageSize);
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+
   return (
-    <div className="modelhub-page pb-24 font-sans">
-      {/* Hero Section */}
-      <section className="relative pt-24 pb-12 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(30,214,97,0.16),transparent_52%)]" />
-        <div className="max-w-7xl mx-auto px-4 relative text-center">
-          <div className="flex justify-center mb-6">
-             <div className="w-12 h-12 bg-[#1ed661]/20 rounded-2xl flex items-center justify-center border border-[#1ed661]/30">
-                <Sparkles className="text-[#1ed661]" size={24} />
-             </div>
+    <div className="modelhub-page pb-28 font-sans">
+      <section className="max-w-7xl mx-auto px-8 pt-8">
+        <div className="relative mx-auto max-w-4xl text-center">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+            <Sparkles size={12} className="text-[#1ed661]" />
+            AI 模型中心
           </div>
-          <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-6 text-white">
-            模型广场
+          <h1 className="mx-auto max-w-4xl text-5xl font-bold leading-[1.1] tracking-tight text-white md:text-7xl">
+            找到最适合你业务的大模型
           </h1>
-          <p className="mx-auto max-w-3xl text-zinc-500 text-lg mb-12 leading-8">
-            以 `AI百科` 的信息组织方式，把模型参数、价格、动态与厂商矩阵集中到一个入口里。先看总览，再进入发现、榜单、对比和详情页，选型路径会更顺。
-          </p>
+          <p className="mt-4 text-base text-zinc-400">覆盖 200+ 模型，实时价格、性能与跑分数据</p>
 
-          <div className="max-w-3xl mx-auto relative group mb-8">
-            <div className="relative flex items-center bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-2xl p-1.5 shadow-2xl">
-              <input 
-                type="text" 
-                placeholder={placeholder}
-                className="flex-1 bg-transparent border-none outline-none px-6 py-3 text-sm placeholder:text-zinc-600"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+          <div className="relative mx-auto mt-10 max-w-2xl">
+            <Search size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  handleHeroSearch();
+                }
+              }}
+              placeholder={placeholder}
+              className="h-16 w-full rounded-2xl border border-white/10 bg-zinc-900/80 pl-14 pr-24 text-base text-white outline-none transition-all placeholder:text-zinc-600 focus:border-[#1ed661]/35"
+            />
+            <button
+              type="button"
+              onClick={handleHeroSearch}
+              className="absolute right-5 top-1/2 -translate-y-1/2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs font-medium text-zinc-500 transition-colors hover:text-zinc-200"
+            >
+              ⌘K
+            </button>
+          </div>
+
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {QUICK_TAGS.map(tag => (
               <button
-                type="button"
-                onClick={() => navigate(`/ai-models/discover${searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : ''}`)}
-                className="bg-[#1ed661] hover:bg-[#33e56f] text-black px-8 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg shadow-[#1ed661]/20"
+                key={tag}
+                onClick={() => handleQuickTagClick(tag)}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-xs transition-all',
+                  tag === '含免费额度'
+                    ? activeQuickTag === tag
+                      ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                      : 'bg-green-500/10 text-green-400 border border-green-500/20'
+                    : activeQuickTag === tag
+                      ? 'bg-white/10 text-white border border-white/20'
+                      : 'bg-white/[0.03] text-zinc-500 border border-white/10 hover:text-zinc-300'
+                )}
               >
-                <Search size={18} />
-                搜索
-              </button>
-            </div>
-          </div>
-
-          {/* Shortcuts Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-12">
-            {shortcuts.map(s => (
-              <button 
-                key={s.name} 
-                onClick={() => handleShortcutClick(s.path, s.name)}
-                className="flex flex-col items-start p-4 bg-zinc-900/50 border border-white/5 rounded-xl hover:bg-zinc-800/80 hover:border-white/10 transition-all duration-200 group text-left w-full"
-              >
-                <div className={cn("p-2 rounded-lg mb-3 transition-transform group-hover:scale-110", s.bg)}>
-                  <s.icon className={s.color} size={20} />
-                </div>
-                <div className="font-bold text-sm text-white mb-1">{s.name}</div>
-                <div className="text-[10px] text-zinc-500 group-hover:text-zinc-400 transition-colors">{s.desc}</div>
-              </button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap justify-center items-center gap-4 text-xs">
-            <span className="text-zinc-600 font-bold uppercase tracking-widest">热门模型</span>
-            {hotModels.map(m => (
-              <button 
-                key={m} 
-                onClick={() => setSearchQuery(m)}
-                className="px-4 py-1.5 bg-zinc-900 border border-white/5 rounded-lg text-zinc-400 hover:text-white hover:border-white/20 transition-all"
-              >
-                {m}
+                {tag}
               </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Dashboard Section */}
-      <section className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
-        {/* Value Trends */}
-        <div className="bg-zinc-900/30 border border-white/5 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-6">
+      <section className="max-w-7xl mx-auto px-8 mt-16 mb-20">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+          {shortcuts.map(shortcut => (
+            <button
+              key={shortcut.name}
+              onClick={() => handleShortcutClick(shortcut.name, shortcut.path)}
+              className="w-full rounded-xl border border-white/5 bg-zinc-900/40 p-4 text-left transition-all duration-150 hover:bg-zinc-800 hover:border-white/10"
+            >
+              <div className={cn('mb-3 inline-flex rounded-lg p-2', shortcut.bg)}>
+                <shortcut.icon size={18} className={shortcut.color} />
+              </div>
+              <div className="text-sm font-bold text-white">{shortcut.name}</div>
+              <div className="mt-1 text-[10px] leading-5 text-zinc-500">{shortcut.desc}</div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="max-w-7xl mx-auto px-8 mb-20 grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="rounded-2xl border border-white/5 bg-zinc-900/30 p-6">
+          <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <TrendingUp className="text-[#1ed661]" size={20} />
-              <h2 className="text-xl font-bold text-white">性价比趋势</h2>
+              <h2 className="text-2xl font-bold text-white">性价比趋势</h2>
             </div>
-            <Link to="/ai-models/rankings" className="text-sm text-[#1ed661] hover:underline flex items-center gap-1">
-              查看完整榜单 <ArrowRight size={14} />
+            <Link to="/ai-models/rankings" className="text-sm text-blue-400 hover:text-white transition-colors">
+              查看完整榜单
             </Link>
           </div>
           <div className="space-y-4">
             {bestValueModels.map(model => (
-              <div 
-                key={model.id}
-                className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors group/item"
-              >
-                <div className="w-10 h-10 bg-zinc-800 rounded-lg flex items-center justify-center font-bold text-sm border border-white/5">
-                  {model.name[0]}
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-bold text-white">{model.name}</div>
-                  <div className="text-[10px] text-zinc-500 uppercase tracking-widest">{model.provider}</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <div className="text-sm font-mono text-green-400">¥{formatPrice(model.pricing.output)}</div>
-                    <div className="text-[10px] text-zinc-600 uppercase tracking-tighter">/百万 Token</div>
+              <div key={model.id} className="flex items-center gap-4 rounded-xl p-3 transition-colors hover:bg-zinc-800/50">
+                <LogoAvatar src={model.logo} alt={model.name} fallback={model.name[0]} size="md" className="bg-zinc-950" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-white">{model.name}</div>
+                  <div className="text-[10px] uppercase tracking-widest text-zinc-500">
+                    {providers.find(provider => provider.id === model.provider)?.name || model.provider}
                   </div>
-                  <button 
-                    onClick={() => addToCompare(model.id)}
-                    className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-zinc-400 hover:text-white transition-all"
-                  >
-                    加入对比
-                  </button>
+                  <p className="mt-1 text-[11px] leading-5 text-zinc-500 line-clamp-2">{model.positioningSummary}</p>
+                </div>
+                <div className="text-right">
+                  <div className="tabular-nums text-sm font-medium text-white">¥{formatPrice(model.pricing.output)}/M</div>
+                  <div className="text-[10px] text-zinc-600">输出价格</div>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Recent Updates */}
-        <div className="bg-zinc-900/30 border border-white/5 rounded-2xl p-6">
-          <div className="flex items-center gap-2 mb-6">
+        <div className="rounded-2xl border border-white/5 bg-zinc-900/30 p-6">
+          <div className="mb-6 flex items-center gap-2">
             <Clock className="text-purple-400" size={20} />
-            <h2 className="text-xl font-bold text-white">近期动态</h2>
+            <h2 className="text-2xl font-bold text-white">近期动态</h2>
           </div>
           <div className="space-y-4">
-            {recentUpdates.map((update, idx) => (
-              <div key={idx} className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors group/item">
+            {recentUpdates.map((update) => (
+              <div key={update.id} className="flex items-center gap-4 rounded-xl p-3 transition-colors hover:bg-zinc-800/50">
                 <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center border border-white/5",
-                  update.updateType === 'new' ? "bg-green-500/10 text-green-500" : "bg-[#1ed661]/10 text-[#1ed661]"
+                  'flex h-10 w-10 items-center justify-center rounded-lg border border-white/5',
+                  update.updateType === 'new' ? 'bg-green-500/10 text-green-400' : 'bg-zinc-800 text-zinc-300'
                 )}>
-                  {update.updateType === 'new' ? <Sparkles size={18} /> : <TrendingDown size={18} />}
+                  {update.updateType === 'new' ? <Sparkles size={16} /> : <TrendingDown size={16} />}
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-white">{update.name}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 bg-white/10 rounded text-zinc-400">{update.updateLabel}</span>
+                    <div className="text-sm font-medium text-white">{update.name}</div>
+                    <span className="rounded px-1.5 py-0.5 text-[10px] text-zinc-400 bg-white/[0.04]">{update.updateLabel}</span>
                   </div>
-                  <p className="text-[10px] text-zinc-500 mt-1">
-                    {update.updateType === 'new' ? '全新旗舰模型上线，能力大幅提升' : 'API 价格下调，性价比进一步提升'}
-                  </p>
+                  <p className="mt-1 text-[11px] leading-5 text-zinc-500">{update.summary}</p>
                 </div>
-                <Link 
-                  to={update.updateType === 'new' ? `/ai-models/models/${update.id}` : '/ai-models/discover'}
-                  className="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-[10px] font-bold text-zinc-400 hover:text-white transition-all"
-                >
-                  {update.actionLabel}
-                </Link>
               </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-white/5 bg-zinc-900/30 p-6">
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="text-sky-300" size={20} />
+              <h2 className="text-2xl font-bold text-white">热门模型</h2>
+            </div>
+            <span className="text-sm text-zinc-500">持续热门</span>
+          </div>
+          <div className="space-y-4">
+            {hotModels.map(model => (
+              <button
+                key={model.id}
+                onClick={() => navigate(`/ai-models/models/${model.id}`)}
+                className="flex w-full items-center gap-4 rounded-xl p-3 text-left transition-colors hover:bg-zinc-800/50"
+              >
+                <LogoAvatar src={model.logo} alt={model.name} fallback={model.name[0]} size="md" className="bg-zinc-950" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-white">{model.name}</div>
+                  <div className="text-[10px] uppercase tracking-widest text-zinc-500">
+                    {providers.find(provider => provider.id === model.provider)?.name || model.provider}
+                  </div>
+                  <p className="mt-1 text-[11px] leading-5 text-zinc-500 line-clamp-2">{model.popularityReason || model.positioningSummary}</p>
+                </div>
+              </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Filters Section */}
-      <section className="max-w-7xl mx-auto px-4 mb-16">
-        <div className="space-y-6">
-          <div className="flex items-start gap-6">
-            <span className="text-xs font-bold text-zinc-600 uppercase tracking-widest mt-2 w-20 shrink-0">模型类型</span>
-            <div className="flex flex-wrap gap-2">
-              {modelTypes.map(type => (
+      <section ref={modelListRef} className="max-w-7xl mx-auto px-8 mb-20">
+        <div className="rounded-3xl border border-white/5 bg-zinc-900/30 p-6 md:p-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-white">全部模型</h2>
+            <p className="mt-2 text-sm text-zinc-400">按类型、开源状态、上下文与价格范围快速筛选模型。</p>
+          </div>
+
+          <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={selectedModality}
+                onChange={(e) => setSelectedModality(e.target.value as ModalityFilter)}
+                className="h-9 rounded-lg border border-white/10 bg-zinc-900 px-3 text-sm text-zinc-300 outline-none"
+              >
+                <option value="全部">全部</option>
+                <option value="纯文本">纯文本</option>
+                <option value="多模态">多模态</option>
+                <option value="图像生成">图像生成</option>
+              </select>
+              <select
+                value={selectedOpenSource}
+                onChange={(e) => setSelectedOpenSource(e.target.value as OpenSourceFilter)}
+                className="h-9 rounded-lg border border-white/10 bg-zinc-900 px-3 text-sm text-zinc-300 outline-none"
+              >
+                <option value="全部">全部</option>
+                <option value="闭源 API">闭源 API</option>
+                <option value="开源可部署">开源可部署</option>
+              </select>
+              <select
+                value={selectedContext}
+                onChange={(e) => setSelectedContext(e.target.value as ContextFilter)}
+                className="h-9 rounded-lg border border-white/10 bg-zinc-900 px-3 text-sm text-zinc-300 outline-none"
+              >
+                {CONTEXT_OPTIONS.map(option => (
+                  <option key={option} value={option}>{option}</option>
+                ))}
+              </select>
+
+              <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-zinc-900 px-3 py-2">
+                <span className="text-xs text-zinc-500">¥{minPrice}</span>
+                <div className="relative w-48">
+                  <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-zinc-700" />
+                  <div
+                    className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-blue-500"
+                    style={{
+                      left: `${(minPrice / 500) * 100}%`,
+                      right: `${100 - (maxPrice / 500) * 100}%`,
+                    }}
+                  />
+                  <input
+                    type="range"
+                    min={0}
+                    max={500}
+                    step={5}
+                    value={minPrice}
+                    onChange={(e) => setMinPrice(Math.min(Number(e.target.value), maxPrice))}
+                    className="pointer-events-none absolute h-1 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
+                  />
+                  <input
+                    type="range"
+                    min={0}
+                    max={500}
+                    step={5}
+                    value={maxPrice}
+                    onChange={(e) => setMaxPrice(Math.max(Number(e.target.value), minPrice))}
+                    className="pointer-events-none absolute h-1 w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500"
+                  />
+                </div>
+                <span className="text-xs text-zinc-500">¥{maxPrice}/M</span>
+              </div>
+
+              <button type="button" onClick={resetFilters} className="text-xs text-zinc-500 transition-colors hover:text-zinc-300">
+                重置筛选
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 xl:justify-end">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortFilter)}
+                className="h-9 rounded-lg border border-white/10 bg-zinc-900 px-3 text-sm text-zinc-300 outline-none"
+              >
+                <option value="综合推荐">综合推荐</option>
+                <option value="最新发布">最新发布</option>
+                <option value="价格最低">价格最低</option>
+              </select>
+
+              <div className="flex items-center rounded-lg border border-white/10 bg-zinc-900 p-1">
                 <button
-                  key={type}
-                  onClick={() => setSelectedType(type)}
-                  className={cn(
-                    "px-4 py-1.5 rounded-lg text-xs font-medium transition-all border",
-                    selectedType === type 
-                      ? "bg-[#1ed661]/10 border-[#1ed661]/50 text-[#1ed661]" 
-                      : "bg-zinc-900 border-white/5 text-zinc-500 hover:text-zinc-300 hover:border-white/10"
-                  )}
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={cn('rounded p-2 transition-colors', viewMode === 'list' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300')}
                 >
-                  {type}
+                  <List size={16} />
                 </button>
-              ))}
+                <button
+                  type="button"
+                  onClick={() => setViewMode('grid')}
+                  className={cn('rounded p-2 transition-colors', viewMode === 'grid' ? 'bg-zinc-700 text-white' : 'text-zinc-500 hover:text-zinc-300')}
+                >
+                  <LayoutGrid size={16} />
+                </button>
+              </div>
+
+              <div className="text-sm text-zinc-500">共 {filteredModels.length} 个模型</div>
             </div>
           </div>
-          <div className="flex items-start gap-6">
-            <span className="text-xs font-bold text-zinc-600 uppercase tracking-widest mt-2 w-20 shrink-0">应用场景</span>
-            <div className="flex flex-wrap gap-2">
-              {scenarios.map(scenario => (
-                <button
-                  key={scenario}
-                  onClick={() => setSelectedScenario(scenario)}
-                  className={cn(
-                    "px-4 py-1.5 rounded-lg text-xs font-medium transition-all border",
-                    selectedScenario === scenario 
-                      ? "bg-[#1ed661]/10 border-[#1ed661]/50 text-[#1ed661]" 
-                      : "bg-zinc-900 border-white/5 text-zinc-500 hover:text-zinc-300 hover:border-white/10"
-                  )}
-                >
-                  {scenario}
-                </button>
-              ))}
+
+          {viewMode === 'list' ? (
+            <div className="overflow-hidden rounded-2xl border border-white/5 bg-zinc-950/20">
+              <div className="grid grid-cols-[minmax(0,2.4fr)_120px_96px_132px_132px_118px_96px] gap-4 border-b border-white/5 bg-white/[0.02] px-5 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-600">
+                <div>模型</div>
+                <div className="text-center">模态</div>
+                <div className="text-center">上下文</div>
+                <div className="text-right">输入</div>
+                <div className="text-right">输出</div>
+                <div className="text-center">标签</div>
+                <div className="text-right">操作</div>
+              </div>
+              {paginatedModels.map(model => {
+                const provider = providers.find(item => item.id === model.provider);
+
+                return (
+                  <Link
+                    key={model.id}
+                    to={`/ai-models/models/${model.id}`}
+                    className="grid min-h-16 grid-cols-[minmax(0,2.4fr)_120px_96px_132px_132px_118px_96px] items-center gap-4 border-b border-white/5 px-5 py-3 transition-colors duration-150 hover:bg-zinc-800/50 last:border-b-0"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <LogoAvatar src={model.logo} alt={model.name} fallback={model.name[0]} size="sm" className="rounded-full bg-zinc-950 p-1" />
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium text-white">{model.name}</div>
+                        <div className="truncate text-xs text-zinc-500">{provider?.name || model.provider}</div>
+                      </div>
+                    </div>
+                    <div className="justify-self-center rounded bg-white/[0.04] px-2 py-1 text-xs text-zinc-400">
+                      {model.modality}
+                    </div>
+                    <div className="text-center text-sm text-zinc-400 tabular-nums">
+                      {model.contextWindow > 0 ? `${Math.round(model.contextWindow / 1000)}K` : '-'}
+                    </div>
+                    <div className="text-right text-sm text-zinc-400 tabular-nums">¥{formatPrice(model.pricing.input)}/M</div>
+                    <div className="text-right text-sm font-medium text-white tabular-nums">¥{formatPrice(model.pricing.output)}/M</div>
+                    <div className="flex items-center justify-center gap-2">
+                      {model.pricing.freeTier ? <span className="rounded bg-green-500/10 px-1.5 py-0.5 text-xs text-green-400">免费</span> : null}
+                      {model.isOpenSource ? <span className="rounded bg-violet-500/10 px-1.5 py-0.5 text-xs text-violet-400">开源</span> : null}
+                    </div>
+                    <div className="text-right">
+                      {renderCompareButton(model.id)}
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 [grid-auto-rows:1fr]">
+              {paginatedModels.map(model => {
+                const provider = providers.find(item => item.id === model.provider);
+                const isCompared = compareList.includes(model.id);
+
+                return (
+                  <Link
+                    key={model.id}
+                    to={`/ai-models/models/${model.id}`}
+                    className="group flex h-full flex-col rounded-2xl border border-white/5 bg-zinc-900/40 p-5 transition-all duration-150 hover:bg-zinc-900/80"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <LogoAvatar src={model.logo || provider?.logo} alt={model.name} fallback={model.name[0]} size="sm" className="bg-zinc-950" />
+                        <span className="text-xs font-bold text-zinc-400">{provider?.name || model.provider}</span>
+                      </div>
+                      <span className="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border bg-[#1ed661]/10 text-[#1ed661] border-[#1ed661]/20">
+                        {model.modality}
+                      </span>
+                    </div>
+
+                    <div className="mt-5">
+                      <h3 className="text-base font-bold text-white transition-colors group-hover:text-[#1ed661]">{model.name}</h3>
+                      <p className="mt-2 line-clamp-3 text-xs leading-6 text-zinc-500">{model.positioningSummary}</p>
+                      <p className="mt-2 text-[10px] text-zinc-600">发布时间: {model.releaseDate}</p>
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      {model.tags.slice(0, 3).map(tag => (
+                        <span key={tag} className="rounded-md border border-[#1ed661]/10 bg-[#1ed661]/5 px-2 py-1 text-[10px] text-[#1ed661]/70">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="mt-auto pt-5">
+                      <div className="border-t border-white/5 pt-4 text-[11px]">
+                        <div className="flex items-center justify-between text-zinc-600">
+                          <span>输入</span>
+                          <span className="tabular-nums text-zinc-400">¥{formatPrice(model.pricing.input)}/M</span>
+                        </div>
+                        <div className="mt-1 flex items-center justify-between text-zinc-600">
+                          <span>输出</span>
+                          <span className="tabular-nums font-medium text-white">¥{formatPrice(model.pricing.output)}/M</span>
+                        </div>
+                        <div className="mt-4">
+                          <span className={cn('text-xs transition-colors', isCompared ? 'text-blue-400' : 'text-zinc-500 hover:text-white')}>
+                            {isCompared ? '✓ 已加入' : '加入对比'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+
+          {filteredModels.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-zinc-900/20 py-24 text-center">
+              <div className="text-lg font-medium text-zinc-600">没有找到符合条件的模型</div>
+              <button onClick={resetFilters} className="mt-4 text-sm text-[#1ed661] hover:underline">
+                清除所有筛选条件
+              </button>
+            </div>
+          )}
+
+          {filteredModels.length > 0 && totalPages > 1 && (
+            <div className="mt-8 flex flex-col gap-4 border-t border-white/5 pt-6 md:flex-row md:items-center md:justify-between">
+              <div className="text-sm text-zinc-500">
+                第 {currentPageSafe} / {totalPages} 页，每页 {pageSize} 个模型
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  disabled={currentPageSafe === 1}
+                  className="inline-flex h-9 items-center rounded-lg border border-white/10 px-3 text-sm text-zinc-400 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  上一页
+                </button>
+                {pageNumbers.map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setCurrentPage(page)}
+                    className={cn(
+                      'inline-flex h-9 min-w-9 items-center justify-center rounded-lg border px-3 text-sm transition-colors',
+                      currentPageSafe === page
+                        ? 'border-blue-500/40 bg-blue-500/10 text-blue-300'
+                        : 'border-white/10 text-zinc-400 hover:text-white'
+                    )}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  disabled={currentPageSafe === totalPages}
+                  className="inline-flex h-9 items-center rounded-lg border border-white/10 px-3 text-sm text-zinc-400 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  下一页
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Model List Section */}
-      <section className="max-w-7xl mx-auto px-4 mb-32">
-        <div className="flex items-center justify-between mb-10">
-          <h2 className="text-2xl font-bold text-white tracking-tight">
-            发现并使用最适合你的 AI 模型
-          </h2>
-          <div className="flex items-center gap-6 text-xs text-zinc-500">
-            <div className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-              <span>按默认排序</span>
-              <ChevronRight size={14} className="rotate-90" />
+      <section className="max-w-7xl mx-auto px-8 mb-20">
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-white">模型厂商</h2>
+              <Link to="/ai-models/ecosystem" className="text-sm text-blue-400 transition-colors hover:text-white">
+                查看全部厂商
+              </Link>
             </div>
-            <div className="flex items-center gap-2 cursor-pointer hover:text-white transition-colors">
-              <Filter size={14} />
-              <span>倒序</span>
-            </div>
+            <p className="mt-2 text-sm text-zinc-400">横向查看主流厂商的代表模型、价格区间和模型规模。</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredModels.map(model => {
-            const provider = providers.find(p => p.id === model.provider);
+        <div className="flex snap-x snap-mandatory gap-4 overflow-x-auto no-scrollbar">
+          {topProviders.map(provider => {
+            const providerModels = models.filter(model => model.provider === provider.id);
+            const pricedModels = providerModels.flatMap(model => [model.pricing.input, model.pricing.output]).filter(price => price > 0);
+            const minProviderPrice = pricedModels.length ? Math.min(...pricedModels) : 0;
+            const maxProviderPrice = pricedModels.length ? Math.max(...pricedModels) : 0;
+
             return (
-              <Link 
-                key={model.id}
-                to={`/ai-models/models/${model.id}`}
-                className="bg-zinc-900/40 border border-white/5 rounded-2xl p-6 hover:bg-zinc-900 transition-all group flex flex-col gap-5"
+              <Link
+                key={provider.id}
+                to={`/ai-models/providers/${provider.id}`}
+                className="w-[260px] shrink-0 snap-start rounded-xl border border-white/5 bg-zinc-900 p-4 transition-colors duration-150 hover:bg-zinc-800"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-zinc-800 rounded-lg flex items-center justify-center p-1.5 border border-white/5">
-                      {provider ? (
-                        <img src={provider.logo} alt={provider.name} className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all" referrerPolicy="no-referrer" />
-                      ) : (
-                        <span className="text-xs font-bold">{model.name[0]}</span>
-                      )}
-                    </div>
-                    <span className="text-xs font-bold text-zinc-400 group-hover:text-zinc-200 transition-colors">{provider?.name || model.provider}</span>
-                  </div>
-                  <span className={cn(
-                    "text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider border",
-                    model.modality === '图像生成' ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-[#1ed661]/10 text-[#1ed661] border-[#1ed661]/20"
-                  )}>
-                    {model.modality === '图像生成' ? '生图' : '对话'}
-                  </span>
+                <div className="flex items-center gap-3">
+                  <LogoAvatar src={provider.logo} alt={provider.name} fallback={provider.name[0]} size="md" className="h-9 w-9 rounded-lg p-1.5 bg-zinc-950" />
+                  <div className="text-base font-medium text-white">{provider.name}</div>
                 </div>
-
-                <div>
-                  <h3 className="text-base font-bold text-white group-hover:text-[#1ed661] transition-colors line-clamp-1">{model.name}</h3>
-                  <p className="text-[10px] text-zinc-600 mt-1.5">发布时间: {model.releaseDate}</p>
+                <div className="mt-3 text-sm text-zinc-400">
+                  旗下 {providerModels.length} 个模型 · 价格 ¥{formatPrice(minProviderPrice)}-{formatPrice(maxProviderPrice)}/M
                 </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {model.tags.slice(0, 3).map(tag => (
-                    <span key={tag} className="px-2 py-1 bg-[#1ed661]/5 text-[#1ed661]/70 text-[10px] rounded-md border border-[#1ed661]/10">{tag}</span>
-                  ))}
-                </div>
-
-                <div className="mt-auto pt-5 border-t border-white/5 flex items-center justify-between text-[11px]">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-zinc-600 uppercase tracking-tighter font-medium">输入: <span className="text-[#1ed661] font-mono">¥{model.pricing.input}</span> / 百万 Token</span>
-                  </div>
-                  <div className="flex flex-col text-right gap-1">
-                    <span className="text-zinc-600 uppercase tracking-tighter font-medium">输出: <span className="text-purple-400 font-mono">¥{model.pricing.output}</span> / 百万 Token</span>
-                  </div>
+                <div className="mt-3 text-xs leading-6 text-zinc-500">
+                  代表: {providerModels.slice(0, 3).map(model => model.name).join(', ')}
                 </div>
               </Link>
             );
           })}
         </div>
-
-        {filteredModels.length === 0 && (
-          <div className="py-32 text-center bg-zinc-900/20 border border-dashed border-white/10 rounded-3xl">
-            <div className="text-zinc-600 text-lg font-medium">没有找到符合条件的模型</div>
-            <button 
-              onClick={() => { setSearchQuery(''); setSelectedType('全部'); setSelectedScenario('全部'); }} 
-              className="text-[#1ed661] text-sm mt-4 hover:underline"
-            >
-              清除所有筛选条件
-            </button>
-          </div>
-        )}
-
-        {/* Pagination Mockup */}
-        <div className="mt-16 flex justify-center items-center gap-2">
-          <button className="p-2 bg-zinc-900 border border-white/5 rounded-lg text-zinc-600 hover:text-white transition-colors"><ChevronLeft size={18} /></button>
-          {[1, 2, 3, 4, 5, 6].map(p => (
-            <button key={p} className={cn(
-              "w-10 h-10 rounded-lg text-sm font-bold transition-all border",
-              p === 1 ? "bg-[#1ed661] border-[#1ed661] text-black" : "bg-zinc-900 border-white/5 text-zinc-500 hover:border-white/20 hover:text-white"
-            )}>{p}</button>
-          ))}
-          <button className="p-2 bg-zinc-900 border border-white/5 rounded-lg text-zinc-600 hover:text-white transition-colors"><ChevronRight size={18} /></button>
-          <div className="ml-4 px-4 py-2 bg-zinc-900 border border-white/5 rounded-lg text-xs text-zinc-500 flex items-center gap-2">
-            20 / page <ChevronRight size={14} className="rotate-90" />
-          </div>
-        </div>
       </section>
 
-      {/* Provider Ecosystem Section - Moved to bottom */}
-      <section className="max-w-7xl mx-auto px-4 mb-32">
-        <div className="mb-12">
-          <h2 className="text-3xl font-bold tracking-tight mb-3 text-white">按系列探索，快速找到你需要的模型</h2>
-          <p className="text-zinc-500 text-lg">全球领先的 AI 研发机构与算力服务商</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {providers.slice(0, 5).map(provider => (
-            <Link 
-              key={provider.id} 
-              to={`/ai-models/providers/${provider.id}`}
-              className="bg-zinc-900/40 border border-white/5 rounded-3xl p-8 flex flex-col gap-8 hover:bg-zinc-900 transition-all group relative"
-            >
-              <div className="flex items-start gap-5">
-                <div className="w-14 h-14 bg-zinc-800 rounded-2xl flex items-center justify-center p-3 shrink-0 border border-white/5">
-                  <img src={provider.logo} alt={provider.name} className="w-full h-full object-contain grayscale group-hover:grayscale-0 transition-all" referrerPolicy="no-referrer" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-bold text-white group-hover:text-[#1ed661] transition-colors">{provider.name}</h2>
-                  <p className="text-xs text-zinc-500 line-clamp-3 mt-2 leading-relaxed">{provider.description}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {models.filter(m => m.provider === provider.id).slice(0, 3).map(m => (
-                  <span key={m.id} className="px-2 py-1 bg-white/5 rounded text-[10px] text-zinc-500 font-medium border border-white/5">{m.name}</span>
-                ))}
-              </div>
-
-              <div className="mt-auto flex items-center justify-between text-sm font-bold text-zinc-400 group-hover:text-white transition-colors">
-                <span className="flex items-center gap-2">探索系列 <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" /></span>
-              </div>
-            </Link>
-          ))}
-          
-          <Link 
-            to="/ai-models/ecosystem"
-            className="bg-zinc-900/20 border border-dashed border-white/10 rounded-3xl p-8 flex flex-col items-center justify-center gap-4 hover:border-[#1ed661]/50 transition-all group"
-          >
-            <div className="text-[#1ed661] group-hover:scale-110 transition-transform">
-              <ArrowRight size={40} />
+      <section className="max-w-7xl mx-auto px-8 mb-20">
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-white">排行榜</h2>
+              <Link to="/ai-models/rankings" className="text-sm text-blue-400 transition-colors hover:text-white">
+                查看完整榜单 →
+              </Link>
             </div>
-            <span className="text-base font-bold text-zinc-400 group-hover:text-[#1ed661] transition-colors">更多系列 / 厂商查询</span>
-          </Link>
-        </div>
-      </section>
-
-      {/* Model Capability Ranking Table Section */}
-      <section className="max-w-7xl mx-auto px-4 mb-32">
-        <div className="mb-12">
-          <h2 className="text-3xl font-bold tracking-tight mb-3 text-white">模型能力排行榜</h2>
-          <p className="text-zinc-500 text-lg">基于 MMLU、代码及数学能力的硬核排名</p>
-        </div>
-
-        <div className="bg-zinc-900/20 border border-white/5 rounded-3xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="px-6 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">排名</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">模型</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">厂商</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">综合 (MMLU)</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">代码 (HumanEval)</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">数学 (GSM8K)</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-center">稳定性</th>
-                  <th className="px-6 py-5 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">模态</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {[...models]
-                  .filter(m => m.performance.mmlu > 0) // Only show models with benchmark data
-                  .sort((a, b) => b.performance.mmlu - a.performance.mmlu)
-                  .slice(0, 10)
-                  .map((model, idx) => {
-                    const provider = providers.find(p => p.id === model.provider);
-                    const rank = idx + 1;
-                    const isTop3 = rank <= 3;
-                    
-                    return (
-                      <tr key={model.id} className="group hover:bg-white/[0.02] transition-colors">
-                        <td className="px-6 py-6">
-                          <span className={cn(
-                            "text-sm font-mono font-bold",
-                            isTop3 ? "text-orange-500" : "text-zinc-600"
-                          )}>
-                            {rank.toString().padStart(2, '0')}
-                          </span>
-                        </td>
-                        <td className="px-6 py-6">
-                          <Link to={`/ai-models/models/${model.id}`} className="flex items-center gap-4 group/link">
-                            <div className="w-10 h-10 bg-zinc-800 rounded-xl flex items-center justify-center font-bold text-sm border border-white/5 group-hover:border-[#1ed661]/30 transition-colors">
-                              {model.name[0]}
-                            </div>
-                            <span className="text-sm font-bold text-zinc-200 group-hover/link:text-[#1ed661] transition-colors">{model.name}</span>
-                          </Link>
-                        </td>
-                        <td className="px-6 py-6">
-                          <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{provider?.name || model.provider}</span>
-                        </td>
-                        <td className="px-6 py-6 text-center">
-                          <span className="text-sm font-mono font-bold text-zinc-300">{model.performance.mmlu}</span>
-                        </td>
-                        <td className="px-6 py-6 text-center">
-                          <span className="text-sm font-mono text-zinc-500">{model.performance.humaneval || '-'}</span>
-                        </td>
-                        <td className="px-6 py-6 text-center">
-                          <span className="text-sm font-mono text-zinc-500">{model.performance.gsm8k || '-'}</span>
-                        </td>
-                        <td className="px-6 py-6 text-center">
-                          <span className="text-sm font-mono text-zinc-400">{model.performance.avgStability}</span>
-                        </td>
-                        <td className="px-6 py-6 text-right">
-                          <span className={cn(
-                            "text-[10px] px-3 py-1 rounded-full font-bold border",
-                            model.modality === '多模态' 
-                              ? "bg-purple-500/5 text-purple-400 border-purple-500/20" 
-                              : "bg-zinc-800 text-zinc-400 border-white/5"
-                          )}>
-                            {model.modality}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-              </tbody>
-            </table>
+            <p className="mt-2 text-sm text-zinc-400">挑出最值得关注的 Top 5 模型，快速感知综合能力、代码能力与性价比。</p>
           </div>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-5">
+              {(['综合能力', '代码能力', '性价比'] as RankingTab[]).map(tab => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setRankingTab(tab)}
+                  className={cn(
+                    'border-b-2 pb-2 text-sm transition-colors',
+                    rankingTab === tab ? 'border-blue-500 text-white' : 'border-transparent text-zinc-500 hover:text-zinc-300'
+                  )}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+            <div className="text-xs text-zinc-600">更新于 2025-01-15</div>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/30">
+          {rankingRows.map((entry, index) => {
+            const provider = providers.find(item => item.id === entry.model.provider);
+
+            return (
+              <button
+                key={entry.model.id}
+                type="button"
+                onClick={() => navigate(`/ai-models/models/${entry.model.id}`)}
+                className="grid w-full grid-cols-[90px_minmax(0,1.8fr)_minmax(0,1fr)_minmax(0,1fr)_100px] items-center gap-4 border-b border-white/5 px-6 py-4 text-left transition-colors hover:bg-zinc-800/50 last:border-b-0"
+              >
+                <div className={cn('text-base font-medium', getRankAccent(index))}>
+                  {getRankMarker(index)} {index + 1}
+                </div>
+                <div className="text-sm font-medium text-white truncate">{entry.model.name}</div>
+                <div className="text-sm text-zinc-500 truncate">{provider?.name || entry.model.provider}</div>
+                <div className="text-sm text-zinc-400">
+                  {entry.scoreLabel} <span className="tabular-nums text-zinc-200">{entry.score}</span>
+                </div>
+                <div className="text-sm font-medium text-white tabular-nums">{entry.model.eloScore}</div>
+              </button>
+            );
+          })}
         </div>
       </section>
     </div>
