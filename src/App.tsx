@@ -45,11 +45,13 @@ import { cn } from './lib/utils';
 import { Card, Badge } from './components/Common';
 import { ScrollProgress, MouseGlow } from './components/Effects';
 import { TimelineItem, ArticleCard } from './components/NewsCards';
+import ModelHubModule from './components/model-hub/ModelHubModule';
 
 type ListTab = 'flash' | 'article' | 'tutorial' | 'knowledge' | 'video' | 'podcast';
 type SearchTab = 'all' | ListTab;
 type View =
   | 'home'
+  | 'model_hub'
   | 'portal'
   | 'list'
   | 'detail'
@@ -1159,6 +1161,7 @@ export default function App() {
 
   const view = useMemo<View>(() => {
     if (hash === '#/' || hash === '#/home') return 'home';
+    if (hash.startsWith('#/model-hub')) return 'model_hub';
     if (hash === '#/portal') return 'portal';
     if (hash.startsWith('#/learning-path')) return 'learning_path';
     if (hash.startsWith('#/list')) return 'list';
@@ -1784,7 +1787,7 @@ export default function App() {
     const entries = [
       { title: 'Skill', desc: '精选技能与工作流模板。', href: '#/section/skill', icon: Code },
       { title: 'MCP', desc: '连接器与工具能力实践。', href: '#/section/mcp', icon: Zap },
-      { title: '大模型', desc: '模型评测、选型与趋势。', href: '#/section/model', icon: Cpu },
+      { title: '大模型', desc: '模型评测、选型与趋势。', href: '#/model-hub/ai-models/providers', icon: Cpu },
       { title: '资讯', desc: '进入资讯聚合页，查看更多内容。', href: '#/portal', icon: Newspaper },
       { title: '安全实验室', desc: 'AI 安全攻防与治理观察。', href: '#/section/security', icon: Shield }
     ];
@@ -2442,7 +2445,7 @@ export default function App() {
             <a href="#/" className={cn('text-sm font-medium transition-colors', view === 'home' ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>首页</a>
             <a href="#/section/skill" className={cn('text-sm font-medium transition-colors', hash.startsWith('#/section/skill') ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>Skill</a>
             <a href="#/section/mcp" className={cn('text-sm font-medium transition-colors', hash.startsWith('#/section/mcp') ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>MCP</a>
-            <a href="#/section/model" className={cn('text-sm font-medium transition-colors', hash.startsWith('#/section/model') ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>大模型</a>
+            <a href="#/model-hub/ai-models/providers" className={cn('text-sm font-medium transition-colors', view === 'model_hub' ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>大模型</a>
 
             <div
               className="relative"
@@ -2501,10 +2504,17 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-12 relative z-10">
+      <main
+        className={cn(
+          'relative z-10',
+          view === 'model_hub' ? 'py-0' : 'max-w-7xl mx-auto px-6 py-12'
+        )}
+      >
         <AnimatePresence mode="wait">
           {view === 'home' ? (
             renderHome()
+          ) : view === 'model_hub' ? (
+            <ModelHubModule />
           ) : view === 'portal' ? (
             renderPortal()
           ) : view === 'learning_path' ? (
