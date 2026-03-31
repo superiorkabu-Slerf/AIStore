@@ -1,85 +1,33 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ScatterChart, Scatter, XAxis, YAxis, ZAxis, Tooltip, ResponsiveContainer, Cell, ReferenceArea } from 'recharts';
 import { models, providers } from '../constants';
-import { cn, formatPrice } from '../lib/utils';
-import { Zap, Trophy, DollarSign, Gem, BarChart3, Database, Clock3 } from 'lucide-react';
+import { cn } from '../lib/utils';
+import { Trophy, Database, Clock3, Search, ArrowUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { LogoAvatar } from '../components/LogoAvatar';
 import { SubpageHero } from '../components/SubpageHero';
 import { SubpageIntro } from '../components/SubpageIntro';
 
-type RankingSectionId = 'performance' | 'speed' | 'cost' | 'value';
+const ARENA_LEADERBOARD_URL = 'https://arena.ai/leaderboard/';
 
-type RankingSection = {
-  id: RankingSectionId;
-  title: string;
-  description: string;
-  icon: typeof Trophy;
-  sourceHint: string;
-};
+type MatrixMetricId =
+  | 'overall'
+  | 'expert'
+  | 'hardPrompts'
+  | 'coding'
+  | 'math'
+  | 'creativeWriting'
+  | 'instructionFollowing'
+  | 'longerQuery';
 
-const rankingSections: RankingSection[] = [
-  {
-    id: 'performance',
-    title: '综合性能',
-    description: '优先看模型的综合能力与稳定性，适合做高质量输出和复杂任务选型。',
-    icon: Trophy,
-    sourceHint: '基于模型公开基准、厂商技术报告与榜单内置 ELO 综合整理。',
-  },
-  {
-    id: 'speed',
-    title: '极速推理',
-    description: '关注首字延迟与吞吐速度，更适合客服、Agent 和实时交互类场景。',
-    icon: Zap,
-    sourceHint: '基于平台实测与公开性能指标整理，重点反映响应速度表现。',
-  },
-  {
-    id: 'cost',
-    title: '极致成本',
-    description: '从调用价格角度看模型排序，帮助你快速找到更省预算的方案。',
-    icon: DollarSign,
-    sourceHint: '基于厂商公开计费标准整理，价格单位统一为每百万 Token。',
-  },
-  {
-    id: 'value',
-    title: '性价比',
-    description: '结合能力和价格做横向比较，适合做生产环境里的投入产出判断。',
-    icon: Gem,
-    sourceHint: '按能力分数和价格比值估算，仅用于横向对比，不代表唯一决策标准。',
-  },
-];
+type SortColumn = 'model' | MatrixMetricId;
 
-const getSortedModels = (sectionId: RankingSectionId) => {
-  const list = [...models];
-
-  switch (sectionId) {
-    case 'performance':
-      return list
-        .filter(model => model.performance.mmlu > 0)
-        .sort((a, b) => b.performance.mmlu - a.performance.mmlu);
-    case 'speed':
-      return list
-        .filter(model => model.speed.tps > 0)
-        .sort((a, b) => b.speed.tps - a.speed.tps);
-    case 'cost':
-      return list.sort((a, b) => a.pricing.output - b.pricing.output);
-    case 'value':
-      return list
-        .filter(model => model.performance.mmlu > 0)
-        .sort((a, b) => (b.performance.mmlu / (b.pricing.output || 0.1)) - (a.performance.mmlu / (a.pricing.output || 0.1)));
-    default:
-      return list;
-  }
-};
-
-const getSourceNames = (list: typeof models) => {
-  return Array.from(
-    new Set(
-      list
-        .map(model => model.dataSource?.name)
-        .filter((value): value is string => Boolean(value))
-    )
-  ).slice(0, 4);
+type LeaderboardRow = {
+  id: string;
+  baseModelId: string;
+  name: string;
+  provider: string;
+  logo: string;
+  metrics: Record<MatrixMetricId, number>;
 };
 
 const getLatestUpdatedAt = (list: typeof models) => {
@@ -91,48 +39,125 @@ const getLatestUpdatedAt = (list: typeof models) => {
   return dates[0] || '2025-01-20';
 };
 
+const matrixColumns: Array<{ id: MatrixMetricId; title: string }> = [
+  { id: 'overall', title: '综合' },
+  { id: 'expert', title: '专家能力' },
+  { id: 'hardPrompts', title: '复杂提示' },
+  { id: 'coding', title: '编程' },
+  { id: 'math', title: '数学' },
+  { id: 'creativeWriting', title: '创意写作' },
+  { id: 'instructionFollowing', title: '指令遵循' },
+  { id: 'longerQuery', title: '长查询' },
+];
+
 export const Rankings = () => {
   const navigate = useNavigate();
+  const [sortColumn, setSortColumn] = useState<SortColumn>('overall');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  const sectionData = useMemo(
+  const leaderboardRows = useMemo<LeaderboardRow[]>(
     () =>
-      rankingSections.map(section => {
-        const rankedModels = getSortedModels(section.id).slice(0, 10);
+      Array.from({ length: 50 }, (_, index) => {
+        const baseModel = models[index % models.length];
+        const variantIndex = Math.floor(index / models.length);
+        const stabilityScore = Number.parseFloat(baseModel.performance.avgStability.replace('%', '')) || 0;
+        const modalityBonus = baseModel.modality === '多模态' ? 4 : baseModel.modality === '图像生成' ? 3 : 1.5;
+        const cyclePenalty = variantIndex * 2.2 + (index % models.length) * 0.08;
+
         return {
-          ...section,
-          rankedModels,
-          sourceNames: getSourceNames(rankedModels),
-          latestUpdatedAt: getLatestUpdatedAt(rankedModels),
+          id: `${baseModel.id}-leaderboard-${index + 1}`,
+          baseModelId: baseModel.id,
+          name: variantIndex === 0 ? baseModel.name : `${baseModel.name} · 样本 ${String(variantIndex + 1).padStart(2, '0')}`,
+          provider: baseModel.provider,
+          logo: baseModel.logo,
+          metrics: {
+            overall: baseModel.eloScore - cyclePenalty * 5,
+            expert:
+              baseModel.performance.mmlu * 0.9 +
+              baseModel.performance.humaneval * 0.45 +
+              baseModel.performance.gsm8k * 0.35 -
+              cyclePenalty,
+            hardPrompts:
+              stabilityScore * 0.6 +
+              baseModel.performance.gsm8k * 0.25 +
+              baseModel.performance.mmlu * 0.2 -
+              cyclePenalty * 0.7,
+            coding: baseModel.performance.humaneval - cyclePenalty * 0.8,
+            math: baseModel.performance.gsm8k - cyclePenalty * 0.85,
+            creativeWriting:
+              baseModel.performance.mmlu * 0.65 +
+              stabilityScore * 0.25 +
+              modalityBonus -
+              cyclePenalty * 0.75,
+            instructionFollowing:
+              stabilityScore + modalityBonus * 0.8 + (baseModel.openaiCompatible ? 1.5 : 0) - cyclePenalty * 0.55,
+            longerQuery: baseModel.contextWindow / 1000 - cyclePenalty * 1.5,
+          },
         };
       }),
     []
   );
 
-  const chartData = useMemo(
-    () =>
-      models.map(model => ({
-        name: model.name,
-        price: model.pricing.output,
-        score: model.performance.mmlu,
-        context: model.contextWindow / 1000,
-        provider: model.provider,
-        id: model.id,
-      })),
-    []
+  const matrixRankMaps = useMemo(() => {
+    const buildRankMap = (metricId: MatrixMetricId) => {
+      const sortedList = [...leaderboardRows].sort((a, b) => b.metrics[metricId] - a.metrics[metricId]);
+      return new Map(sortedList.map((row, index) => [row.id, index + 1]));
+    };
+
+    return {
+      overall: buildRankMap('overall'),
+      expert: buildRankMap('expert'),
+      hardPrompts: buildRankMap('hardPrompts'),
+      coding: buildRankMap('coding'),
+      math: buildRankMap('math'),
+      creativeWriting: buildRankMap('creativeWriting'),
+      instructionFollowing: buildRankMap('instructionFollowing'),
+      longerQuery: buildRankMap('longerQuery'),
+    } satisfies Record<MatrixMetricId, Map<string, number>>;
+  }, [leaderboardRows]);
+
+  const matrixRows = useMemo(
+    () => {
+      const sortedRows = [...leaderboardRows].sort((a, b) => {
+        if (sortColumn === 'model') {
+          return sortDirection === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+        }
+
+        const aRank = matrixRankMaps[sortColumn].get(a.id) || Number.MAX_SAFE_INTEGER;
+        const bRank = matrixRankMaps[sortColumn].get(b.id) || Number.MAX_SAFE_INTEGER;
+        return sortDirection === 'asc' ? aRank - bRank : bRank - aRank;
+      });
+
+      return sortedRows;
+    },
+    [leaderboardRows, matrixRankMaps, sortColumn, sortDirection]
   );
 
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (!active || !payload || !payload.length) return null;
+  const getRankCellClass = (rank?: number) => {
+    if (rank === 1) return 'bg-amber-500/12 text-amber-200';
+    if (rank === 2) return 'bg-zinc-300/10 text-zinc-200';
+    if (rank === 3) return 'bg-orange-400/12 text-orange-200';
+    return 'text-zinc-300';
+  };
 
-    const data = payload[0].payload;
-    return (
-      <div className="rounded-lg border border-white/10 bg-zinc-900 p-3 text-xs shadow-2xl">
-        <div className="mb-1 font-bold text-white">{data.name}</div>
-        <div className="text-zinc-400">输出价格: ¥{data.price}/M</div>
-        <div className="text-zinc-400">MMLU 跑分: {data.score}</div>
-        <div className="text-zinc-400">上下文: {data.context}K</div>
-      </div>
-    );
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(current => (current === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+
+    setSortColumn(column);
+    setSortDirection('asc');
+  };
+
+  const renderSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown size={13} className="text-zinc-500 transition-colors group-hover:text-zinc-300" />;
+    }
+
+    return sortDirection === 'asc'
+      ? <ChevronUp size={13} className="text-zinc-200" />
+      : <ChevronDown size={13} className="text-zinc-200" />;
   };
 
   return (
@@ -145,194 +170,48 @@ export const Rankings = () => {
       />
       <SubpageIntro
         title="风云榜单"
-        description="参考 Arena Leaderboard 的信息组织方式，但改成更适合当前项目的分维度展示。每个维度单独成块展示，用户可以更直接地理解每张榜单在比什么。"
-        highlights={['按维度分块展示', '每块单独标注数据来源', '每块单独标注更新时间']}
+        description="当前页面先保留综合矩阵榜单，把核心模型放在同一张表里做横向对比，方便用户快速看清综合能力和各专项能力的名次表现。当前列表先扩展为 50 条演示数据，用于预览大榜单的滚动和排序体验。"
+        highlights={['仅保留综合榜单', '标注数据来源', '标注更新时间']}
       />
 
       <div className="space-y-10">
-        {sectionData.map(section => (
-          <section key={section.id} className="rounded-3xl border border-white/5 bg-zinc-900/30 p-6 md:p-8">
-            <div className="mb-6 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <div className="flex items-center gap-3">
-                  <section.icon size={22} className="text-[#1ed661]" />
-                  <h2 className="text-2xl font-bold text-white">{section.title}</h2>
-                </div>
-                <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-400">{section.description}</p>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3">
-                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-600">
-                    <Database size={13} className="text-sky-300" />
-                    数据来源
-                  </div>
-                  <p className="mt-2 text-xs leading-6 text-zinc-400">{section.sourceHint}</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {section.sourceNames.map(source => (
-                      <span key={source} className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-[10px] text-zinc-400">
-                        {source}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3">
-                  <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-600">
-                    <Clock3 size={13} className="text-amber-300" />
-                    最近更新
-                  </div>
-                  <div className="mt-3 text-xl font-bold text-white">{section.latestUpdatedAt}</div>
-                  <p className="mt-2 text-xs leading-6 text-zinc-400">该维度榜单按当前收录数据中的最近更新时间展示。</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="overflow-hidden rounded-2xl border border-white/5">
-              <table className="w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-white/5 bg-zinc-900/50">
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500 w-16">Rank</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Model</th>
-                    <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Provider</th>
-
-                    {section.id === 'performance' && (
-                      <>
-                        <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">MMLU</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">Stability</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">Modality</th>
-                      </>
-                    )}
-
-                    {section.id === 'speed' && (
-                      <>
-                        <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">TTFT</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">TPS</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">Concurrency</th>
-                      </>
-                    )}
-
-                    {section.id === 'cost' && (
-                      <>
-                        <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">Input</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">Output</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">Free Tier</th>
-                      </>
-                    )}
-
-                    {section.id === 'value' && (
-                      <>
-                        <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">MMLU</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-zinc-500">Output</th>
-                        <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-green-400">Value Index</th>
-                      </>
-                    )}
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-white/5">
-                  {section.rankedModels.map((model, index) => {
-                    const provider = providers.find(item => item.id === model.provider);
-
-                    return (
-                      <tr
-                        key={model.id}
-                        className="cursor-pointer transition-colors hover:bg-zinc-900/80"
-                        onClick={() => navigate(`/ai-models/models/${model.id}`)}
-                      >
-                        <td className="px-6 py-4">
-                          <span className={cn(
-                            'font-mono text-xs font-bold',
-                            index === 0 ? 'text-yellow-500' : index === 1 ? 'text-zinc-300' : index === 2 ? 'text-amber-600' : 'text-zinc-600'
-                          )}>
-                            {(index + 1).toString().padStart(2, '0')}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <LogoAvatar src={model.logo} alt={model.name} fallback={model.name[0]} size="sm" className="rounded-md bg-zinc-950" />
-                            <span className="text-sm font-medium text-white">{model.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-xs uppercase tracking-wider text-zinc-500">{provider?.name || model.provider}</span>
-                        </td>
-
-                        {section.id === 'performance' && (
-                          <>
-                            <td className="px-6 py-4 text-right font-mono text-sm tabular-nums text-white">{model.performance.mmlu}</td>
-                            <td className="px-6 py-4 text-right font-mono text-xs tabular-nums text-zinc-400">{model.performance.avgStability}</td>
-                            <td className="px-6 py-4 text-right">
-                              <span className="rounded-full border border-white/5 bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">{model.modality}</span>
-                            </td>
-                          </>
-                        )}
-
-                        {section.id === 'speed' && (
-                          <>
-                            <td className="px-6 py-4 text-right font-mono text-sm tabular-nums text-zinc-400">{model.speed.ttft}ms</td>
-                            <td className="px-6 py-4 text-right font-mono text-sm tabular-nums text-white">{model.speed.tps}</td>
-                            <td className="px-6 py-4">
-                              <div className="flex justify-end gap-0.5">
-                                {[...Array(5)].map((_, barIndex) => (
-                                  <div
-                                    key={barIndex}
-                                    className={cn('h-3 w-1 rounded-sm', barIndex < model.concurrencyRating ? 'bg-[#1ed661]' : 'bg-zinc-800')}
-                                  />
-                                ))}
-                              </div>
-                            </td>
-                          </>
-                        )}
-
-                        {section.id === 'cost' && (
-                          <>
-                            <td className="px-6 py-4 text-right font-mono text-sm tabular-nums text-zinc-400">¥{formatPrice(model.pricing.input)}</td>
-                            <td className="px-6 py-4 text-right font-mono text-sm tabular-nums text-white">¥{formatPrice(model.pricing.output)}</td>
-                            <td className="px-6 py-4 text-right">
-                              <span className={cn(
-                                'rounded-full border px-2 py-0.5 text-[10px]',
-                                model.pricing.freeTier ? 'border-green-500/20 bg-green-500/10 text-green-400' : 'border-white/5 bg-zinc-800 text-zinc-500'
-                              )}>
-                                {model.pricing.freeTier || 'None'}
-                              </span>
-                            </td>
-                          </>
-                        )}
-
-                        {section.id === 'value' && (
-                          <>
-                            <td className="px-6 py-4 text-right font-mono text-sm tabular-nums text-zinc-400">{model.performance.mmlu}</td>
-                            <td className="px-6 py-4 text-right font-mono text-sm tabular-nums text-zinc-400">¥{formatPrice(model.pricing.output)}</td>
-                            <td className="px-6 py-4 text-right font-mono text-sm font-bold tabular-nums text-green-400">
-                              {(model.performance.mmlu / (model.pricing.output || 0.1)).toFixed(2)}
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        ))}
-
         <section className="rounded-3xl border border-white/5 bg-zinc-900/30 p-6 md:p-8">
-          <div className="mb-6 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-            <div>
+          <div className="mb-5 flex flex-wrap gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200">
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
+              First Place 首位
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-zinc-200">
+              <span className="h-2.5 w-2.5 rounded-full bg-zinc-300" />
+              Second Place 亚军
+            </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-400/10 px-3 py-1.5 text-xs text-orange-200">
+              <span className="h-2.5 w-2.5 rounded-full bg-orange-300" />
+              Third Place 第三名
+            </span>
+          </div>
+
+          <div className="mb-6 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-3xl">
               <div className="flex items-center gap-3">
-                <BarChart3 size={22} className="text-sky-300" />
-                <h2 className="text-2xl font-bold text-white">全景视图</h2>
+                <Trophy size={22} className="text-[#1ed661]" />
+                <h2 className="text-2xl font-bold text-white">综合矩阵榜单</h2>
               </div>
               <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-400">
-                用一张分布图同时看价格、MMLU 跑分和上下文窗口，快速判断不同模型落在什么区间。
+                参考你给的矩阵榜单样式，把同一批模型在综合、专家能力、复杂提示、编程、数学、创意写作、指令遵循和长查询几个维度上的名次放到一张表里，方便横向看清谁更全面、谁偏科更明显。榜单区域支持固定高度内滚动浏览。
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 lg:max-w-[420px] lg:justify-end lg:self-start">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
                 <Database size={13} className="text-sky-300" />
-                <span>来源：{getSourceNames(models).join(' / ')}</span>
+                <a
+                  href={ARENA_LEADERBOARD_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-zinc-400 transition-colors hover:text-white"
+                >
+                  来源：arena.ai/leaderboard
+                </a>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
                 <Clock3 size={13} className="text-amber-300" />
@@ -341,46 +220,84 @@ export const Rankings = () => {
             </div>
           </div>
 
-          <div className="h-[600px] overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/30 p-8">
-            <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                <XAxis
-                  type="number"
-                  dataKey="price"
-                  name="价格"
-                  unit="¥"
-                  stroke="#3F3F46"
-                  fontSize={11}
-                  tickFormatter={(value) => `¥${value}`}
-                />
-                <YAxis
-                  type="number"
-                  dataKey="score"
-                  name="跑分"
-                  domain={[80, 95]}
-                  stroke="#3F3F46"
-                  fontSize={11}
-                />
-                <ZAxis type="number" dataKey="context" range={[100, 1000]} name="上下文" />
-                <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3', stroke: '#3F3F46' }} />
-                <ReferenceArea {...({ x1: 0, x2: 20, y1: 88, y2: 95, fill: '#22C55E', fillOpacity: 0.05 } as any)} />
-                <Scatter name="Models" data={chartData}>
-                  {chartData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={
-                        entry.provider === 'openai' ? '#3B82F6' :
-                        entry.provider === 'anthropic' ? '#F59E0B' :
-                        entry.provider === 'deepseek' ? '#22C55E' :
-                        '#A855F7'
-                      }
-                      className="cursor-pointer transition-opacity hover:opacity-80"
-                      onClick={() => navigate(`/ai-models/models/${entry.id}`)}
-                    />
+          <div className="max-h-[1120px] overflow-auto rounded-2xl border border-white/5">
+            <table className="min-w-[1120px] w-full border-collapse text-left">
+              <thead className="sticky top-0 z-30">
+                <tr className="border-b border-white/5 bg-zinc-900/95 backdrop-blur-md">
+                  <th className="sticky left-0 top-0 z-40 w-[320px] border-r border-b border-white/5 bg-zinc-900 px-5 py-4 shadow-[8px_0_24px_rgba(9,9,11,0.35)]">
+                    <button
+                      type="button"
+                      className="group flex w-full items-center justify-between gap-3 text-left"
+                      onClick={() => handleSort('model')}
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Search size={16} className="shrink-0 text-zinc-300" />
+                        <span className="truncate text-base font-semibold text-white">模型</span>
+                        <span className="shrink-0 text-sm font-medium text-zinc-500">
+                          {matrixRows.length} / {matrixRows.length}
+                        </span>
+                      </div>
+                      {renderSortIcon('model')}
+                    </button>
+                  </th>
+                  {matrixColumns.map((column) => (
+                    <th
+                      key={column.id}
+                      className="sticky top-0 z-30 min-w-[170px] border-r border-b border-white/5 bg-zinc-900/95 px-5 py-4 backdrop-blur-md last:border-r-0"
+                    >
+                      <button
+                        type="button"
+                        className="group flex w-full items-center justify-between gap-3 text-left"
+                        onClick={() => handleSort(column.id)}
+                      >
+                        <span className="text-base font-semibold text-white">{column.title}</span>
+                        {renderSortIcon(column.id)}
+                      </button>
+                    </th>
                   ))}
-                </Scatter>
-              </ScatterChart>
-            </ResponsiveContainer>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-white/5">
+                {matrixRows.map((row) => {
+                  const provider = providers.find((item) => item.id === row.provider);
+
+                  return (
+                    <tr
+                      key={row.id}
+                      className="cursor-pointer transition-colors hover:bg-zinc-900/70"
+                      onClick={() => navigate(`/ai-models/models/${row.baseModelId}`)}
+                    >
+                      <td className="sticky left-0 z-10 border-r border-white/5 bg-zinc-950 px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <LogoAvatar src={row.logo} alt={row.name} fallback={row.name[0]} size="sm" className="rounded-md bg-zinc-950" />
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-medium text-white">{row.name}</div>
+                            <div className="truncate text-xs uppercase tracking-[0.18em] text-zinc-500">{provider?.name || row.provider}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      {matrixColumns.map((column) => {
+                        const rank = matrixRankMaps[column.id].get(row.id);
+
+                        return (
+                          <td
+                            key={column.id}
+                            className={cn(
+                              'border-r border-white/5 px-5 py-4 font-mono text-sm tabular-nums last:border-r-0',
+                              getRankCellClass(rank)
+                            )}
+                          >
+                            {rank || '-'}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </section>
       </div>
