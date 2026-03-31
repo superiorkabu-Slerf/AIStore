@@ -176,32 +176,32 @@ export const Rankings = () => {
 
       <div className="space-y-10">
         <section className="rounded-3xl border border-white/5 bg-zinc-900/30 p-6 md:p-8">
-          <div className="mb-5 flex flex-wrap gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200">
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
-              First Place 首位
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-zinc-200">
-              <span className="h-2.5 w-2.5 rounded-full bg-zinc-300" />
-              Second Place 亚军
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-400/10 px-3 py-1.5 text-xs text-orange-200">
-              <span className="h-2.5 w-2.5 rounded-full bg-orange-300" />
-              Third Place 第三名
-            </span>
-          </div>
-
-          <div className="mb-6 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl">
-              <div className="flex items-center gap-3">
-                <Trophy size={22} className="text-[#1ed661]" />
-                <h2 className="text-2xl font-bold text-white">综合矩阵榜单</h2>
-              </div>
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-zinc-400">
-                参考你给的矩阵榜单样式，把同一批模型在综合、专家能力、复杂提示、编程、数学、创意写作、指令遵循和长查询几个维度上的名次放到一张表里，方便横向看清谁更全面、谁偏科更明显。榜单区域支持固定高度内滚动浏览。
-              </p>
+          <div className="mb-6">
+            <div className="flex items-center gap-3">
+              <Trophy size={22} className="text-[#1ed661]" />
+              <h2 className="text-2xl font-bold text-white">综合矩阵榜单</h2>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 lg:max-w-[420px] lg:justify-end lg:self-start">
+            <p className="mt-3 max-w-4xl text-sm leading-7 text-zinc-400">
+              参考你给的矩阵榜单样式，把同一批模型在综合、专家能力、复杂提示、编程、数学、创意写作、指令遵循和长查询几个维度上的名次放到一张表里，方便横向看清谁更全面、谁偏科更明显。榜单区域支持固定高度内滚动浏览。
+            </p>
+
+            <div className="mt-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex flex-wrap gap-3">
+                <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200">
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
+                  First Place 首位
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-zinc-200">
+                  <span className="h-2.5 w-2.5 rounded-full bg-zinc-300" />
+                  Second Place 亚军
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-400/10 px-3 py-1.5 text-xs text-orange-200">
+                  <span className="h-2.5 w-2.5 rounded-full bg-orange-300" />
+                  Third Place 第三名
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500 xl:justify-end">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
                 <Database size={13} className="text-sky-300" />
                 <a
@@ -218,6 +218,7 @@ export const Rankings = () => {
                 <span>更新：{getLatestUpdatedAt(models)}</span>
               </div>
             </div>
+          </div>
           </div>
 
           <div className="max-h-[1120px] overflow-auto rounded-2xl border border-white/5">
