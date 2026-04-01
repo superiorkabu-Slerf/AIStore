@@ -46,11 +46,17 @@ import { Card, Badge } from './components/Common';
 import { ScrollProgress, MouseGlow } from './components/Effects';
 import { TimelineItem, ArticleCard } from './components/NewsCards';
 import ModelHubModule from './components/model-hub/ModelHubModule';
+import BasicGuidePage from './components/BasicGuidePage';
+import MessageChannelsPage from './components/MessageChannelsPage';
+import InfrastructurePlatformsPage from './components/InfrastructurePlatformsPage';
 
 type ListTab = 'flash' | 'article' | 'tutorial' | 'knowledge' | 'video' | 'podcast';
 type SearchTab = 'all' | ListTab;
 type View =
   | 'home'
+  | 'guide'
+  | 'channels'
+  | 'infrastructure'
   | 'model_hub'
   | 'portal'
   | 'list'
@@ -1163,6 +1169,9 @@ export default function App() {
 
   const view = useMemo<View>(() => {
     if (hash === '#/' || hash === '#/home') return 'home';
+    if (hash.startsWith('#/guide')) return 'guide';
+    if (hash.startsWith('#/channels')) return 'channels';
+    if (hash.startsWith('#/infrastructure')) return 'infrastructure';
     if (hash.startsWith('#/model-hub')) return 'model_hub';
     if (hash === '#/portal') return 'portal';
     if (hash.startsWith('#/learning-path')) return 'learning_path';
@@ -2447,6 +2456,9 @@ export default function App() {
             <a href="#/" className={cn('text-sm font-medium transition-colors', view === 'home' ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>首页</a>
             <a href="#/section/skill" className={cn('text-sm font-medium transition-colors', hash.startsWith('#/section/skill') ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>Skill</a>
             <a href="#/section/mcp" className={cn('text-sm font-medium transition-colors', hash.startsWith('#/section/mcp') ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>MCP</a>
+            <a href="#/guide/basic" className={cn('text-sm font-medium transition-colors', view === 'guide' ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>基础指南</a>
+            <a href="#/infrastructure" className={cn('text-sm font-medium transition-colors', view === 'infrastructure' ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>基础设施</a>
+            <a href="#/channels" className={cn('text-sm font-medium transition-colors', view === 'channels' ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>消息渠道</a>
             <div
               className="relative"
               onMouseEnter={() => setIsModelHubMenuOpen(true)}
@@ -2541,12 +2553,18 @@ export default function App() {
       <main
         className={cn(
           'relative z-10',
-          view === 'model_hub' ? 'py-0' : 'max-w-7xl mx-auto px-6 py-12'
+          view === 'model_hub' || view === 'guide' || view === 'channels' || view === 'infrastructure' ? 'py-0' : 'max-w-7xl mx-auto px-6 py-12'
         )}
       >
         <AnimatePresence mode="wait">
           {view === 'home' ? (
             renderHome()
+          ) : view === 'guide' ? (
+            <BasicGuidePage />
+          ) : view === 'channels' ? (
+            <MessageChannelsPage />
+          ) : view === 'infrastructure' ? (
+            <InfrastructurePlatformsPage />
           ) : view === 'model_hub' ? (
             <ModelHubModule />
           ) : view === 'portal' ? (
