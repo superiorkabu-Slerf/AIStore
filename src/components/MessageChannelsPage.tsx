@@ -39,9 +39,6 @@ export default function MessageChannelsPage() {
           <p className="mt-6 max-w-3xl text-base leading-8 text-gray-300 md:text-xl md:leading-9">
             快速搭建专属 AI 助理，回答问题、搜索信息、执行任务、聪明响应。
           </p>
-          <p className="mt-4 max-w-3xl text-sm leading-8 text-gray-400 md:text-base">
-            把 OpenClaw 接入常用 IM 平台后，用户就可以直接在熟悉的聊天入口里发起提问和调用能力。
-          </p>
         </header>
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
