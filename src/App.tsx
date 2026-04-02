@@ -49,11 +49,13 @@ import ModelHubModule from './components/model-hub/ModelHubModule';
 import BasicGuidePage from './components/BasicGuidePage';
 import MessageChannelsPage from './components/MessageChannelsPage';
 import InfrastructurePlatformsPage from './components/InfrastructurePlatformsPage';
+import AIToolsPage from './components/AIToolsPage';
 
 type ListTab = 'flash' | 'article' | 'tutorial' | 'knowledge' | 'video' | 'podcast';
 type SearchTab = 'all' | ListTab;
 type View =
   | 'home'
+  | 'ai_tools'
   | 'guide'
   | 'channels'
   | 'infrastructure'
@@ -1169,6 +1171,7 @@ export default function App() {
 
   const view = useMemo<View>(() => {
     if (hash === '#/' || hash === '#/home') return 'home';
+    if (hash.startsWith('#/ai-tools')) return 'ai_tools';
     if (hash.startsWith('#/guide')) return 'guide';
     if (hash.startsWith('#/channels')) return 'channels';
     if (hash.startsWith('#/infrastructure')) return 'infrastructure';
@@ -2454,6 +2457,7 @@ export default function App() {
 
           <nav className="hidden md:flex items-center gap-8">
             <a href="#/" className={cn('text-sm font-medium transition-colors', view === 'home' ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>首页</a>
+            <a href="#/ai-tools" className={cn('text-sm font-medium transition-colors', view === 'ai_tools' ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>AI工具</a>
             <a href="#/section/skill" className={cn('text-sm font-medium transition-colors', hash.startsWith('#/section/skill') ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>Skill</a>
             <a href="#/section/mcp" className={cn('text-sm font-medium transition-colors', hash.startsWith('#/section/mcp') ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>MCP</a>
             <a href="#/guide/basic" className={cn('text-sm font-medium transition-colors', view === 'guide' ? 'text-[#1ed661]' : 'text-gray-400 hover:text-[#1ed661]')}>基础指南</a>
@@ -2553,12 +2557,14 @@ export default function App() {
       <main
         className={cn(
           'relative z-10',
-          view === 'model_hub' || view === 'guide' || view === 'channels' || view === 'infrastructure' ? 'py-0' : 'max-w-7xl mx-auto px-6 py-12'
+          view === 'model_hub' || view === 'guide' || view === 'channels' || view === 'infrastructure' || view === 'ai_tools' ? 'py-0' : 'max-w-7xl mx-auto px-6 py-12'
         )}
       >
         <AnimatePresence mode="wait">
           {view === 'home' ? (
             renderHome()
+          ) : view === 'ai_tools' ? (
+            <AIToolsPage hash={hash} />
           ) : view === 'guide' ? (
             <BasicGuidePage />
           ) : view === 'channels' ? (
