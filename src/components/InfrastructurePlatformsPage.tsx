@@ -4,6 +4,7 @@ import { ArrowUpRight, BookOpen, Cloud, Layers3, List, Rocket, LayoutGrid } from
 type PlatformEntry = {
   name: string;
   logo: string;
+  logoImage?: string;
   logoText: string;
   logoClass: string;
   tagline: string;
@@ -48,6 +49,7 @@ const cloudVendors: CloudVendorEntry[] = [
   {
     name: '阿里云',
     logo: 'A',
+    logoImage: '/platform-logos/ali.svg',
     logoText: '阿里云',
     logoClass: 'bg-[#ff6a00]/12 text-[#ff6a00]',
     tagline: '国内生态成熟，产品线完整。',
@@ -65,11 +67,12 @@ const cloudVendors: CloudVendorEntry[] = [
     difficulty: '中低',
     note: '如果你后续还要用数据库、对象存储、CDN，这一类平台衔接最自然。',
     regionLabel: '国内 / 香港 / 海外',
-    url: 'https://www.aliyun.com',
+    url: 'https://www.aliyun.com/activity/ecs/clawdbot',
   },
   {
     name: '腾讯云',
     logo: 'T',
+    logoImage: '/platform-logos/tengxun.svg',
     logoText: '腾讯云',
     logoClass: 'bg-[#2d7df6]/12 text-[#2d7df6]',
     tagline: '轻量云和入门产品体验好。',
@@ -86,11 +89,12 @@ const cloudVendors: CloudVendorEntry[] = [
     difficulty: '低',
     note: '如果你想尽快买一台能跑服务的国内机器，轻量线很适合作为第一步。',
     regionLabel: '国内 / 香港 / 海外',
-    url: 'https://cloud.tencent.com',
+    url: 'https://cloud.tencent.com/act/pro/openclaw',
   },
   {
     name: '华为云',
     logo: 'H',
+    logoImage: '/platform-logos/huawei.svg',
     logoText: '华为云',
     logoClass: 'bg-[#e11d48]/12 text-[#e11d48]',
     tagline: '偏稳定和企业级能力。',
@@ -107,11 +111,12 @@ const cloudVendors: CloudVendorEntry[] = [
     difficulty: '中',
     note: '更适合对稳定性、合规性和规范交付要求更高的团队。',
     regionLabel: '国内 / 海外',
-    url: 'https://www.huaweicloud.com',
+    url: 'https://activity.huaweicloud.com/openclaw',
   },
   {
     name: '火山引擎',
     logo: 'V',
+    logoImage: '/platform-logos/huoshan.svg',
     logoText: '火山引擎',
     logoClass: 'bg-[#1677ff]/12 text-[#1677ff]',
     tagline: '适合关注弹性和流量增长的业务。',
@@ -128,11 +133,12 @@ const cloudVendors: CloudVendorEntry[] = [
     difficulty: '中',
     note: '如果你的业务会快速扩展，且更关注弹性资源调度，这类平台会更顺手。',
     regionLabel: '国内 / 部分海外',
-    url: 'https://www.volcengine.com',
+    url: 'https://www.volcengine.com/activity/clawdbot',
   },
   {
     name: '百度智能云',
     logo: 'B',
+    logoImage: '/platform-logos/baiducloud.svg',
     logoText: '百度智能云',
     logoClass: 'bg-[#2563eb]/12 text-[#2563eb]',
     tagline: 'AI 能力和云资源结合更紧。',
@@ -149,11 +155,12 @@ const cloudVendors: CloudVendorEntry[] = [
     difficulty: '中',
     note: '更适合对接百度系能力或偏 AI 场景的项目。',
     regionLabel: '国内 / 部分海外',
-    url: 'https://cloud.baidu.com',
+    url: 'https://cloud.baidu.com/product/BCC/moltbot.html',
   },
   {
     name: '京东云',
     logo: 'J',
+    logoImage: '/platform-logos/jingdongyun.svg',
     logoText: '京东云',
     logoClass: 'bg-[#dc2626]/12 text-[#dc2626]',
     tagline: '偏性价比和活动力度。',
@@ -170,11 +177,12 @@ const cloudVendors: CloudVendorEntry[] = [
     difficulty: '低',
     note: '如果你比较关注预算，且主要做国内轻量服务，可以优先留意活动价格。',
     regionLabel: '国内 / 香港',
-    url: 'https://www.jdcloud.com',
+    url: 'https://www.jdcloud.com/cn/pages/moltbot',
   },
   {
     name: '天翼云',
     logo: 'E',
+    logoImage: '/platform-logos/tianyiyun.svg',
     logoText: '天翼云',
     logoClass: 'bg-[#0f766e]/12 text-[#0f766e]',
     tagline: '电信网络资源加成明显。',
@@ -191,7 +199,7 @@ const cloudVendors: CloudVendorEntry[] = [
     difficulty: '中',
     note: '更适合偏国内稳定交付、对链路质量较敏感的项目。',
     regionLabel: '国内',
-    url: 'https://www.ctyun.cn',
+    url: 'https://www.ctyun.cn/act/OpenClaw',
   },
 ];
 
@@ -199,6 +207,7 @@ const vpsVendors: StructuredPlatformEntry[] = [
   {
     name: 'Vultr',
     logo: 'V',
+    logoImage: '/platform-logos/vultr-vps.svg',
     logoText: 'Vultr',
     logoClass: 'bg-[#007bfc]/12 text-[#007bfc]',
     tagline: '海外 VPS 老牌，节点覆盖广。',
@@ -216,11 +225,12 @@ const vpsVendors: StructuredPlatformEntry[] = [
     difficulty: '低',
     note: '如果你主要关注海外节点和快速起机，Vultr 往往是最容易开始的一档。',
     regionLabel: '美国 / 欧洲 / 亚洲',
-    url: 'https://www.vultr.com',
+    url: 'https://www.vultr.com/marketplace/apps/openclaw/#general-information',
   },
   {
     name: 'DigitalOcean',
     logo: 'D',
+    logoImage: '/platform-logos/digitalocean-vps.svg',
     logoText: 'DigitalOcean',
     logoClass: 'bg-[#0080ff]/12 text-[#0080ff]',
     tagline: '开发者友好，概念清晰。',
@@ -237,11 +247,12 @@ const vpsVendors: StructuredPlatformEntry[] = [
     difficulty: '低',
     note: '如果你更在意产品体验和文档生态，而不是单纯追求最低价，这类平台很平衡。',
     regionLabel: '美国 / 欧洲 / 亚洲',
-    url: 'https://www.digitalocean.com',
+    url: 'https://marketplace.digitalocean.com/apps/openclaw',
   },
   {
     name: 'Linode / Akamai',
     logo: 'L',
+    logoImage: 'https://www.linode.com/linode/en/images/logo/akamai-logo.svg',
     logoText: 'Linode',
     logoClass: 'bg-[#00a95c]/12 text-[#00a95c]',
     tagline: '经典 VPS 路线，稳定直给。',
@@ -263,6 +274,7 @@ const vpsVendors: StructuredPlatformEntry[] = [
   {
     name: 'Hetzner',
     logo: 'H',
+    logoImage: '/platform-logos/hetzner.svg',
     logoText: 'Hetzner',
     logoClass: 'bg-[#d81e05]/12 text-[#d81e05]',
     tagline: '欧洲性价比很高。',
@@ -287,6 +299,7 @@ const hostedPlatforms: StructuredPlatformEntry[] = [
   {
     name: 'Zeabur',
     logo: 'Z',
+    logoImage: '/platform-logos/zeabur.svg',
     logoText: 'Zeabur',
     logoClass: 'bg-[#7c3aed]/12 text-[#7c3aed]',
     tagline: '中文体验友好，部署路径短。',
@@ -304,11 +317,12 @@ const hostedPlatforms: StructuredPlatformEntry[] = [
     difficulty: '低',
     note: '如果你最想解决的是“尽快部署成功”，而不是研究底层细节，这一类最顺手。',
     regionLabel: '多区域托管',
-    url: 'https://zeabur.com',
+    url: 'https://zeabur.com/zh-CN/templates/VTZ4FX',
   },
   {
     name: 'Railway',
     logo: 'R',
+    logoImage: '/platform-logos/railway.svg',
     logoText: 'Railway',
     logoClass: 'bg-[#7c3aed]/12 text-[#a78bfa]',
     tagline: '开发者体验突出。',
@@ -325,11 +339,12 @@ const hostedPlatforms: StructuredPlatformEntry[] = [
     difficulty: '低',
     note: '适合从 demo 往早期生产平滑过渡，尤其适合需要频繁发布的小团队。',
     regionLabel: '多区域托管',
-    url: 'https://railway.com',
+    url: 'https://railway.com/deploy/openclaw',
   },
   {
     name: 'Sealos',
     logo: 'S',
+    logoImage: '/platform-logos/sealos.svg',
     logoText: 'Sealos',
     logoClass: 'bg-[#0ea5e9]/12 text-[#0ea5e9]',
     tagline: '云原生感更强。',
@@ -346,11 +361,12 @@ const hostedPlatforms: StructuredPlatformEntry[] = [
     difficulty: '中',
     note: '如果你希望保留一定云原生能力，又不想自己完全从云厂商底层搭起，这种平台更合适。',
     regionLabel: '国内友好',
-    url: 'https://sealos.run',
+    url: 'https://template.bja.sealos.run/deploy?templateName=openclaw',
   },
   {
     name: 'Render',
     logo: 'R',
+    logoImage: '/platform-logos/render.svg',
     logoText: 'Render',
     logoClass: 'bg-[#46e3b7]/12 text-[#46e3b7]',
     tagline: '海外托管平台入门经典。',
@@ -409,9 +425,18 @@ function CloudCompareTable({
                   target="_blank"
                   rel="noreferrer"
                   onClick={(event) => event.stopPropagation()}
-                  className="inline-flex items-center gap-1 transition-colors hover:text-[#8fb0ff]"
+                  className="inline-flex items-center gap-3 transition-colors hover:text-[#8fb0ff]"
                 >
-                  {item.name}
+                  {item.logoImage ? (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-[#F5F7FA] p-0.5">
+                      <img src={item.logoImage} alt={item.name} className="max-h-full max-w-full object-contain" />
+                    </span>
+                  ) : (
+                    <span className={`flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black ${item.logoClass}`}>
+                      {item.logo}
+                    </span>
+                  )}
+                  <span>{item.name}</span>
                   <ArrowUpRight className="h-4 w-4" />
                 </a>
               </td>
@@ -460,14 +485,17 @@ function CloudVendorCards({ items, activeName }: { items: CloudVendorEntry[]; ac
         >
           <div className="mb-5 flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className={`flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-black ${item.logoClass}`}>
-                {item.logo}
-              </div>
-              <div>
-                <div className={`text-lg font-black ${item.logoClass.split(' ').find((v) => v.startsWith('text-')) || 'text-white'}`}>
-                  {item.logoText}
+              {item.logoImage ? (
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#F5F7FA] p-1">
+                  <img src={item.logoImage} alt={item.name} className="max-h-full max-w-full object-contain" />
                 </div>
-                <h3 className="mt-1 text-2xl font-black text-white">{item.name}</h3>
+              ) : (
+                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-black ${item.logoClass}`}>
+                  {item.logo}
+                </div>
+              )}
+              <div>
+                <h3 className="text-2xl font-black text-white">{item.name}</h3>
               </div>
             </div>
             {item.featured ? (
@@ -570,9 +598,18 @@ function CompareTable({
                   target="_blank"
                   rel="noreferrer"
                   onClick={(event) => event.stopPropagation()}
-                  className="inline-flex items-center gap-1 transition-colors hover:text-[#8fb0ff]"
+                  className="inline-flex items-center gap-3 transition-colors hover:text-[#8fb0ff]"
                 >
-                  {item.name}
+                  {item.logoImage ? (
+                    <span className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-[#F5F7FA] p-0.5">
+                      <img src={item.logoImage} alt={item.name} className="max-h-full max-w-full object-contain" />
+                    </span>
+                  ) : (
+                    <span className={`flex h-8 w-8 items-center justify-center rounded-xl text-xs font-black ${item.logoClass}`}>
+                      {item.logo}
+                    </span>
+                  )}
+                  <span>{item.name}</span>
                   <ArrowUpRight className="h-4 w-4" />
                 </a>
               </td>
@@ -621,14 +658,17 @@ function StructuredCards({ items, activeName }: { items: StructuredPlatformEntry
         >
           <div className="mb-5 flex items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className={`flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-black ${item.logoClass}`}>
-                {item.logo}
-              </div>
-              <div>
-                <div className={`text-lg font-black ${item.logoClass.split(' ').find((v) => v.startsWith('text-')) || 'text-white'}`}>
-                  {item.logoText}
+              {item.logoImage ? (
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#F5F7FA] p-1">
+                  <img src={item.logoImage} alt={item.name} className="max-h-full max-w-full object-contain" />
                 </div>
-                <h3 className="mt-1 text-2xl font-black text-white">{item.name}</h3>
+              ) : (
+                <div className={`flex h-14 w-14 items-center justify-center rounded-2xl text-xl font-black ${item.logoClass}`}>
+                  {item.logo}
+                </div>
+              )}
+              <div>
+                <h3 className="text-2xl font-black text-white">{item.name}</h3>
               </div>
             </div>
             {item.featured ? (

@@ -48,12 +48,12 @@ const environmentOptions: EnvironmentOption[] = [
     cautions: ['需持续付费', '需基础 Linux 知识'],
     tags: ['生产环境', '团队项目', '24小时在线'],
     footerItems: [
-      { label: '阿里云', href: 'https://www.aliyun.com' },
-      { label: '腾讯云', href: 'https://cloud.tencent.com' },
-      { label: '华为云', href: 'https://www.huaweicloud.com' },
+      { label: '阿里云', href: 'https://www.aliyun.com/activity/ecs/clawdbot' },
+      { label: '腾讯云', href: 'https://cloud.tencent.com/act/pro/openclaw' },
+      { label: '华为云', href: 'https://activity.huaweicloud.com/openclaw' },
       { label: 'Vultr', href: 'https://www.vultr.com' },
     ],
-    highlights: ['阿里云 / 腾讯云 / 华为云', 'Vultr / DigitalOcean / Hetzner', '适合 Docker、源码、反向代理组合'],
+    highlights: ['阿里云 / 腾讯云 / 华为云', 'Vultr / DigitalOcean / Hetzner', '可直接开箱即用，也可按需用 Docker 或源码'],
     specs: [
       { label: 'CPU', value: '2 核' },
       { label: '内存', value: '4 GB' },
@@ -76,9 +76,9 @@ const environmentOptions: EnvironmentOption[] = [
     cautions: ['灵活性较低', '长期费用可能更高'],
     tags: ['新手试跑', 'MVP', '零运维'],
     footerItems: [
-      { label: 'Zeabur', href: 'https://zeabur.com' },
-      { label: 'Railway', href: 'https://railway.com' },
-      { label: 'Sealos', href: 'https://sealos.run' },
+      { label: 'Zeabur', href: 'https://zeabur.com/zh-CN/templates/VTZ4FX' },
+      { label: 'Railway', href: 'https://railway.com/deploy/openclaw' },
+      { label: 'Sealos', href: 'https://template.bja.sealos.run/deploy?templateName=openclaw' },
       { label: 'Render', href: 'https://render.com' },
     ],
     highlights: ['Zeabur / Railway / Sealos / Render', '界面化部署，对命令行依赖更少', '适合先验证业务，再考虑迁移'],
@@ -105,17 +105,16 @@ const environmentOptions: EnvironmentOption[] = [
 
 const deployOptions: DeployOption[] = [
   {
-    title: 'Docker 部署',
-    subtitle: '默认首选，适合绝大多数部署场景',
-    icon: Box,
-    accent: 'from-[#4f7cff]/20 to-[#4f7cff]/5 text-[#7ea2ff]',
-    summary: '把应用和依赖都装进一个可迁移的运行盒子里，部署稳定、升级直观、迁移成本也低。',
-    bestFor: '正式上线、长期维护、希望部署和升级都标准化的项目',
-    strengths: ['环境一致，不污染系统', '一行命令启动，适合复制部署', '升级时只需拉新镜像重建容器'],
-    tradeoffs: ['需要先装 Docker', '第一次接触容器概念时有少量学习成本'],
-    highlights: ['推荐搭配云服务器', '1Panel / Portainer / 宝塔都能辅助管理', '迁移到新机器时最省心'],
-    command: `# 安装 Docker\ncurl -fsSL https://get.docker.com | sh\n\n# 启动 OpenClaw\ndocker run -d --name openclaw \\\n  -p 8080:8080 openclaw/core:latest`,
-    note: '可搭配 1Panel、宝塔、Portainer 或 NAS 自带面板做可视化管理。',
+    title: '开箱即用',
+    subtitle: '适合新手，直接用平台模板或应用市场快速上线',
+    icon: Rocket,
+    accent: 'from-emerald-500/20 to-emerald-500/5 text-emerald-300',
+    summary: '很多云服务器面板和一键托管平台都已经提供现成模板、应用市场或预设环境，选好实例后几步就能直接跑起来。',
+    bestFor: '第一次部署、想少碰命令行、希望先跑通再慢慢理解的人',
+    strengths: ['上手门槛最低', '平台通常已预配运行环境', '适合快速验证业务可用性'],
+    tradeoffs: ['灵活度不如 Docker 和源码', '不同平台可迁移性相对弱'],
+    highlights: ['云服务器面板也可开箱即用', 'Zeabur / Railway / Sealos 更常见', '适合先部署成功再优化'],
+    note: '如果你的目标是“先有一个能跑的版本”，这通常是最轻松的起点。',
     tutorialHash: '#/detail/claude-3-5-launch?from=%23/guide/basic',
   },
   {
@@ -145,6 +144,20 @@ const deployOptions: DeployOption[] = [
     command: `# 克隆代码库\ngit clone https://github.com/openclaw/core.git\n\n# 安装依赖并启动\ncd core && pnpm install\npnpm run dev`,
     note: '如果你计划长期改代码，这一类方式会比脚本或纯面板部署更顺手。',
     tutorialHash: '#/detail/anthropic-claude-enterprise?from=%23/guide/basic',
+  },
+  {
+    title: 'Docker 部署',
+    subtitle: '默认首选，适合绝大多数部署场景',
+    icon: Box,
+    accent: 'from-[#4f7cff]/20 to-[#4f7cff]/5 text-[#7ea2ff]',
+    summary: '把应用和依赖都装进一个可迁移的运行盒子里，部署稳定、升级直观、迁移成本也低。',
+    bestFor: '正式上线、长期维护、希望部署和升级都标准化的项目',
+    strengths: ['环境一致，不污染系统', '一行命令启动，适合复制部署', '升级时只需拉新镜像重建容器'],
+    tradeoffs: ['需要先装 Docker', '第一次接触容器概念时有少量学习成本'],
+    highlights: ['适合需要标准化部署的场景', '1Panel / Portainer / 宝塔都能辅助管理', '迁移到新机器时最省心'],
+    command: `# 安装 Docker\ncurl -fsSL https://get.docker.com | sh\n\n# 启动 OpenClaw\ndocker run -d --name openclaw \\\n  -p 8080:8080 openclaw/core:latest`,
+    note: '可搭配 1Panel、宝塔、Portainer 或 NAS 自带面板做可视化管理。',
+    tutorialHash: '#/detail/claude-3-5-launch?from=%23/guide/basic',
   },
 ];
 
@@ -414,7 +427,7 @@ export default function BasicGuidePage() {
           </section>
 
           <section id="deploy" className="scroll-mt-28">
-            <SectionHeader title="部署方式" summary="场地定了以后，再决定用什么方式把应用装上去。对于大多数人来说，Docker 仍然是最稳妥的默认选择。" />
+            <SectionHeader title="部署方式" summary="场地定了以后，再决定用什么方式把应用装上去。很多云服务器和托管平台都支持直接开箱即用，Docker 则更适合需要标准化维护的场景。" />
             <div className="space-y-6">
               {deployOptions.map((item, index) => (
                 <DeployShowcase key={item.title} item={item} index={index} />
@@ -426,18 +439,22 @@ export default function BasicGuidePage() {
                 <Server className="h-5 w-5 text-[#7ea2ff]" />
                 <h3 className="text-lg font-bold text-white">怎么选更省事</h3>
               </div>
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                  <div className="text-sm font-semibold text-white">想稳妥上线</div>
-                  <p className="mt-2 text-sm leading-7 text-gray-400">优先选 Docker + 云服务器，这是最均衡的默认解法。</p>
+                  <div className="text-sm font-semibold text-white">完全想省心</div>
+                  <p className="mt-2 text-sm leading-7 text-gray-400">优先选开箱即用或一键托管平台，先把服务跑起来，再考虑后续优化。</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
                   <div className="text-sm font-semibold text-white">想最快跑通</div>
-                  <p className="mt-2 text-sm leading-7 text-gray-400">优先选一键脚本或托管平台，先验证可用性，再考虑细化部署。</p>
+                  <p className="mt-2 text-sm leading-7 text-gray-400">优先选一键部署脚本，命令最少，适合先验证是否能正常启动。</p>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                  <div className="text-sm font-semibold text-white">想深度改代码</div>
-                  <p className="mt-2 text-sm leading-7 text-gray-400">直接源码部署，开发、调试和二次定制都会更顺手。</p>
+                  <div className="text-sm font-semibold text-white">想长期稳定</div>
+                  <p className="mt-2 text-sm leading-7 text-gray-400">优先选云服务器的一键模板或托管平台；如果后续要做标准化维护，再考虑切到 Docker。</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="text-sm font-semibold text-white">想自己改代码</div>
+                  <p className="mt-2 text-sm leading-7 text-gray-400">直接源码部署，调试问题、接自定义逻辑和二次开发都会更灵活。</p>
                 </div>
               </div>
             </div>

@@ -3,6 +3,7 @@ import { Bot } from 'lucide-react';
 type ImChannel = {
   name: string;
   logo: string;
+  logoImage?: string;
   description: string;
   accent: string;
   brandText: string;
@@ -10,16 +11,16 @@ type ImChannel = {
 };
 
 const imChannels: ImChannel[] = [
-  { name: '微信', logo: '微', description: '连接个人微信生态，把 AI 助理放进高频日常对话入口。', accent: 'text-[#3fbf5a]', brandText: '微信', badgeClass: 'bg-[#3fbf5a]/12' },
-  { name: '企业微信', logo: '企', description: '适合团队内部问答、流程协作、知识检索和业务消息触达。', accent: 'text-[#2d7df6]', brandText: '企业微信', badgeClass: 'bg-[#2d7df6]/12' },
-  { name: 'QQ', logo: 'Q', description: '覆盖传统社群和熟人沟通场景，适合机器人问答与群内互动。', accent: 'text-[#111111]', brandText: 'QQ', badgeClass: 'bg-[#111111]/8' },
-  { name: '飞书', logo: '飞', description: '适合文档、消息、工作流联动，把 AI 助手嵌进团队协作中。', accent: 'text-[#2563eb]', brandText: '飞书', badgeClass: 'bg-[#2563eb]/10' },
-  { name: 'LARK', logo: 'L', description: '面向国际化团队的消息协作入口，适合多地区统一接入。', accent: 'text-[#06b6d4]', brandText: 'LARK', badgeClass: 'bg-[#06b6d4]/10' },
-  { name: '钉钉', logo: '钉', description: '适合企业通知、审批协作、内部服务机器人和员工问答场景。', accent: 'text-[#1677ff]', brandText: '钉钉', badgeClass: 'bg-[#1677ff]/10' },
-  { name: 'Discord', logo: 'D', description: '适合社区运营、机器人助手、开发者社群和命令式交互。', accent: 'text-[#5865f2]', brandText: 'Discord', badgeClass: 'bg-[#5865f2]/10' },
-  { name: 'Telegram', logo: 'T', description: '机器人生态成熟，适合快速搭建跨地区消息助手和通知系统。', accent: 'text-[#229ed9]', brandText: 'Telegram', badgeClass: 'bg-[#229ed9]/10' },
-  { name: 'WhatsApp', logo: 'W', description: '适合海外用户服务、自动回复、销售咨询和客户支持场景。', accent: 'text-[#5fcb5c]', brandText: 'WhatsApp', badgeClass: 'bg-[#5fcb5c]/10' },
-  { name: 'iMessage', logo: 'i', description: '适合苹果设备生态内的个人化助手和轻量消息触达体验。', accent: 'text-[#111111]', brandText: 'I Message', badgeClass: 'bg-[#111111]/8' },
+  { name: '微信', logo: '微', logoImage: '/channel-logos/weixin.svg', description: '连接个人微信生态，把 AI 助理放进高频日常对话入口。', accent: 'text-[#3fbf5a]', brandText: '微信', badgeClass: 'bg-[#3fbf5a]/12' },
+  { name: '企业微信', logo: '企', logoImage: '/channel-logos/qiyeweixin.svg', description: '适合团队内部问答、流程协作、知识检索和业务消息触达。', accent: 'text-[#2d7df6]', brandText: '企业微信', badgeClass: 'bg-[#2d7df6]/12' },
+  { name: 'QQ', logo: 'Q', logoImage: '/channel-logos/qq.svg', description: '覆盖传统社群和熟人沟通场景，适合机器人问答与群内互动。', accent: 'text-[#111111]', brandText: 'QQ', badgeClass: 'bg-[#111111]/8' },
+  { name: '飞书', logo: '飞', logoImage: '/channel-logos/feishu.svg', description: '适合文档、消息、工作流联动，把 AI 助手嵌进团队协作中。', accent: 'text-[#2563eb]', brandText: '飞书', badgeClass: 'bg-[#2563eb]/10' },
+  { name: 'LARK', logo: 'L', logoImage: '/channel-logos/feishu.svg', description: '面向国际化团队的消息协作入口，适合多地区统一接入。', accent: 'text-[#06b6d4]', brandText: 'LARK', badgeClass: 'bg-[#06b6d4]/10' },
+  { name: '钉钉', logo: '钉', logoImage: '/channel-logos/dingding.svg', description: '适合企业通知、审批协作、内部服务机器人和员工问答场景。', accent: 'text-[#1677ff]', brandText: '钉钉', badgeClass: 'bg-[#1677ff]/10' },
+  { name: 'Discord', logo: 'D', logoImage: '/channel-logos/discord.svg', description: '适合社区运营、机器人助手、开发者社群和命令式交互。', accent: 'text-[#5865f2]', brandText: 'Discord', badgeClass: 'bg-[#5865f2]/10' },
+  { name: 'Telegram', logo: 'T', logoImage: '/channel-logos/telegram.svg', description: '机器人生态成熟，适合快速搭建跨地区消息助手和通知系统。', accent: 'text-[#229ed9]', brandText: 'Telegram', badgeClass: 'bg-[#229ed9]/10' },
+  { name: 'WhatsApp', logo: 'W', logoImage: '/channel-logos/whatsapp.svg', description: '适合海外用户服务、自动回复、销售咨询和客户支持场景。', accent: 'text-[#5fcb5c]', brandText: 'WhatsApp', badgeClass: 'bg-[#5fcb5c]/10' },
+  { name: 'iMessage', logo: 'i', logoImage: '/channel-logos/imessage.svg', description: '适合苹果设备生态内的个人化助手和轻量消息触达体验。', accent: 'text-[#111111]', brandText: 'I Message', badgeClass: 'bg-[#111111]/8' },
 ];
 
 export default function MessageChannelsPage() {
@@ -46,15 +47,24 @@ export default function MessageChannelsPage() {
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {imChannels.map((channel) => (
             <article key={channel.name} className="rounded-[32px] border border-white/10 bg-white/[0.04] p-3 shadow-[0_24px_80px_rgba(0,0,0,0.18)] transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/20">
-              <div className="rounded-[24px] bg-[#f3f6fb] px-8 py-12">
-                <div className="flex items-center justify-center gap-4">
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl text-2xl font-black ${channel.badgeClass} ${channel.accent}`}>
-                    {channel.logo}
+              <div className="rounded-[24px] border border-white/6 bg-[#F5F7FA] px-8 py-8">
+                {channel.logoImage ? (
+                  <div className="flex min-h-[120px] items-center justify-center gap-4">
+                    <img src={channel.logoImage} alt={channel.name} className="max-h-12 w-auto max-w-[96px] object-contain" />
+                    <div className="min-h-[36px] text-left text-2xl font-black tracking-tight text-[#18202b]">
+                      {channel.brandText}
+                    </div>
                   </div>
-                  <div className={`text-4xl font-black tracking-tight ${channel.accent}`}>
-                    {channel.brandText}
+                ) : (
+                  <div className="flex min-h-[120px] items-center justify-center gap-4">
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-xl font-black ${channel.badgeClass} ${channel.accent}`}>
+                      {channel.logo}
+                    </div>
+                    <div className={`min-h-[36px] text-left text-2xl font-black tracking-tight ${channel.accent}`}>
+                      {channel.brandText}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="px-5 pb-5 pt-6">
