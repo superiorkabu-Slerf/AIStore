@@ -22,7 +22,6 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import { Card, Badge } from './Common';
 import { cn } from '../lib/utils';
-import AIToolsPage2 from './AIToolsPage2';
 
 type AIToolCategoryId =
   | 'chat'
@@ -569,6 +568,147 @@ const AI_NEWS = [
   'Midjourney 新版本测试画面流出，光影表现继续突破'
 ];
 
+function normalizePriceType(price: string) {
+  if (price === '付费') return '付费';
+  if (price === '未开放') return '未开放';
+  if (price.includes('免费+付费')) return 'Freemium';
+  if (price.includes('免费')) return '免费';
+  return '付费';
+}
+
+function inferUpdatedBucket(index: number) {
+  if (index <= 3) return '7天内';
+  if (index <= 8) return '30天内';
+  return '90天内';
+}
+
+type ToolDecisionMeta = {
+  positioning: string;
+  updatedAt: string;
+  addedAt: string;
+  verifiedAt: string;
+  suitableFor: string[];
+  notSuitableFor: string[];
+  useCases: string[];
+  screenshotItems: string[];
+  alternativeToolIds: {
+    similar: string[];
+    cheaper: string[];
+    chineseFriendly: string[];
+    popular: string[];
+  };
+};
+
+function inferUpdatedDate(index: number) {
+  if (index <= 3) return '2026-04-02';
+  if (index <= 8) return '2026-03-24';
+  return '2026-02-18';
+}
+
+function inferAddedDate(index: number) {
+  if (index <= 3) return '2026-03-01';
+  if (index <= 8) return '2026-02-10';
+  return '2026-01-08';
+}
+
+function inferVerificationDate(index: number) {
+  if (index <= 3) return '2026-04-03';
+  if (index <= 8) return '2026-03-29';
+  return '2026-03-12';
+}
+
+function inferRequiresLogin(tool: AIToolItem) {
+  return !tool.platform.toLowerCase().includes('self-hosted');
+}
+
+function inferHasFreeTrial(tool: AIToolItem) {
+  return tool.price.includes('免费');
+}
+
+function inferNeedsVpn(tool: AIToolItem) {
+  const platform = tool.platform.toLowerCase();
+  if (platform.includes('discord')) return '大概率需要';
+  if (!tool.chinese) return '可能需要';
+  return '通常不需要';
+}
+
+function inferCoreFeaturePaywall(tool: AIToolItem) {
+  const normalizedPrice = normalizePriceType(tool.price);
+  if (normalizedPrice === '免费') return '否';
+  if (normalizedPrice === '未开放') return '当前暂未开放';
+  if (normalizedPrice === 'Freemium') return '部分核心功能需付费';
+  return '是';
+}
+
+function inferSuitableFor(tool: AIToolItem) {
+  if (tool.categoryId === 'video') return ['适合内容创作者', '适合需要快速出片的团队', '适合想低门槛做视频的人'];
+  if (tool.categoryId === 'coding') return ['适合前后端开发者', '适合想缩短编码时间的团队', '适合日常高频写代码的人'];
+  if (tool.categoryId === 'writing') return ['适合内容运营', '适合营销与文案团队', '适合高频写作的人'];
+
+  return Array.from(
+    new Set([
+      `适合${tool.suitable.join('、')}等人群`,
+      `适合想用 ${tool.category} 工具快速完成结果产出的人`,
+      tool.difficulty === '简单' ? '适合希望低门槛上手的新手用户' : '适合愿意花一点时间打磨效果的用户'
+    ])
+  ).slice(0, 3);
+}
+
+function inferNotSuitableFor(tool: AIToolItem) {
+  if (tool.categoryId === 'video') return ['不适合需要重度专业剪辑的用户', '不适合追求复杂后期控制的团队', '不适合无法接受生成等待时间的人'];
+
+  return Array.from(
+    new Set([
+      `不太适合对 ${tool.category} 专业控制要求特别重的用户`,
+      tool.difficulty === '简单' ? '不太适合追求复杂高级参数调校的用户' : '不太适合完全不愿投入学习成本的新手',
+      tool.cons[0] ? `不太适合无法接受“${tool.cons[0]}”这类限制的人` : '不太适合需要完全零限制工作流的团队'
+    ])
+  ).slice(0, 3);
+}
+
+function inferUseCases(tool: AIToolItem) {
+  const byCategory: Record<AIToolCategoryId, string[]> = {
+    video: ['短视频创作', '营销物料生成', '产品展示视频', '数字人口播', '广告素材快速生成'],
+    chat: ['日常问答', '方案整理', '内容起草', '学习辅助', '多任务协作'],
+    image: ['海报与封面生成', '商品图制作', '视觉提案', '风格探索', '设计草稿产出'],
+    writing: ['营销文案', '文章初稿', '脚本生成', '内容改写', '总结整理'],
+    coding: ['代码生成', '调试修复', '接口开发', '重构辅助', '开发协作提效'],
+    design: ['海报制作', '品牌视觉', '社媒物料', '演示设计', '团队协作交付'],
+    office: ['会议纪要', '文档整理', '知识库管理', 'PPT制作', '团队协作'],
+    audio: ['配乐灵感', '短视频背景音', '音乐 demo', '内容配音', '音频创作'],
+    search: ['资料搜集', '事实检索', '来源对照', '轻量分析', '快速了解新主题'],
+    assistant: ['通用问答', '任务辅助', '数据分析', '知识查询', '效率提升']
+  };
+
+  return byCategory[tool.categoryId] || ['常见任务处理', '效率提升', '内容生产'];
+}
+
+function buildToolDecisionMeta(tool: AIToolItem, index: number): ToolDecisionMeta {
+  const fallbackAlternatives = AI_TOOLS.filter((item) => item.id !== tool.id);
+  const similar = fallbackAlternatives.filter((item) => item.categoryId === tool.categoryId).slice(0, 3).map((item) => item.id);
+  const cheaper = fallbackAlternatives
+    .filter((item) => item.categoryId === tool.categoryId && normalizePriceType(item.price) !== '付费')
+    .slice(0, 3)
+    .map((item) => item.id);
+  const chineseFriendly = fallbackAlternatives
+    .filter((item) => item.categoryId === tool.categoryId && item.chinese)
+    .slice(0, 3)
+    .map((item) => item.id);
+  const popular = [...TOP_TOOLS].filter((item) => item.id !== tool.id).slice(0, 4).map((item) => item.id);
+
+  return {
+    positioning: tool.tagline,
+    updatedAt: inferUpdatedDate(index),
+    addedAt: inferAddedDate(index),
+    verifiedAt: inferVerificationDate(index),
+    suitableFor: inferSuitableFor(tool),
+    notSuitableFor: inferNotSuitableFor(tool),
+    useCases: inferUseCases(tool),
+    screenshotItems: ['产品界面截图', '示例输出图', '典型结果展示', '使用流程示意'],
+    alternativeToolIds: { similar, cheaper, chineseFriendly, popular }
+  };
+}
+
 function iconForCategoryName(name: string) {
   if (name.includes('绘画')) return ImageIcon;
   if (name.includes('视频')) return Video;
@@ -642,27 +782,35 @@ const ToolGridCard: React.FC<{ tool: AIToolItem }> = ({ tool }) => {
       <div className="relative h-44 overflow-hidden">
         <img src={tool.screenshot} alt={tool.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/28 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 flex items-end px-5 pb-4">
-          <div className="rounded-[1.35rem] border border-white/12 bg-[#101720]/92 p-1.5 shadow-[0_14px_34px_rgba(0,0,0,0.28)] backdrop-blur-md">
-            <img src={tool.logo} alt={tool.name} className="h-12 w-12 rounded-[1rem] object-cover" referrerPolicy="no-referrer" />
-          </div>
-        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-4 p-5">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
+            <div className="rounded-[1.1rem] border border-white/12 bg-[#101720]/92 p-1 shadow-[0_12px_30px_rgba(0,0,0,0.24)]">
+              <img src={tool.logo} alt={tool.name} className="h-10 w-10 rounded-[0.85rem] object-cover" referrerPolicy="no-referrer" />
+            </div>
             <h3 className="truncate text-lg font-black text-white">{tool.name}</h3>
             {tool.featured ? <Badge label="精选" className="text-[9px]" /> : null}
-            <span className="rounded-full border border-[#1ed661]/18 bg-[#1ed661]/12 px-2.5 py-1 text-[11px] font-semibold text-[#7af3a6]">{tool.category}</span>
+            <span className="inline-flex h-6 items-center rounded-full border border-[#1ed661]/18 bg-[#1ed661]/12 px-2.5 text-[11px] font-semibold leading-none text-[#7af3a6]">
+              {tool.category}
+            </span>
           </div>
           <p className="mt-1 truncate text-sm text-white/55">{tool.tagline}</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {tool.chinese ? <span className="rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[11px] text-white/68">支持中文</span> : null}
-          <span className="rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[11px] text-white/68">{tool.platform}</span>
-          <span className="rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[11px] text-white/68">{tool.difficulty}</span>
+          {tool.chinese ? (
+            <span className="inline-flex h-6 items-center rounded-full border border-white/8 bg-white/[0.03] px-2.5 text-[11px] leading-none text-white/68">
+              支持中文
+            </span>
+          ) : null}
+          <span className="inline-flex h-6 items-center rounded-full border border-white/8 bg-white/[0.03] px-2.5 text-[11px] leading-none text-white/68">
+            {tool.platform}
+          </span>
+          <span className="inline-flex h-6 items-center rounded-full border border-white/8 bg-white/[0.03] px-2.5 text-[11px] leading-none text-white/68">
+            {tool.difficulty}
+          </span>
         </div>
 
         <p className="line-clamp-3 text-sm leading-6 text-white/62">{tool.description}</p>
@@ -881,8 +1029,8 @@ function AIToolsHome() {
 
       <section className="mx-auto mt-10 max-w-7xl">
         <div className="grid gap-6 lg:grid-cols-3">
-          <TopicCard title="AI漫剧" subtitle="漫剧行业必备 AI 生产力工具" badge="热门" tools={[AI_TOOLS[0], AI_TOOLS[2], AI_TOOLS[6], AI_TOOLS[7]].filter(Boolean)} />
           <TopicCard title="一起养龙虾专题" subtitle="把压缩包里的行业专题内容保留下来" badge="最新" tools={[AI_TOOLS[1], AI_TOOLS[15], AI_TOOLS[16], AI_TOOLS[4]].filter(Boolean)} />
+          <TopicCard title="编辑精选" subtitle="把压缩包里的行业专题内容保留下来" badge="最新" tools={[AI_TOOLS[1], AI_TOOLS[15], AI_TOOLS[16], AI_TOOLS[4]].filter(Boolean)} />
           <NewsSpotlightCard />
         </div>
       </section>
@@ -891,7 +1039,7 @@ function AIToolsHome() {
         <div className="mb-6 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-2xl font-black tracking-tight text-white">
             <Star size={22} className="text-white" />
-            编辑精选
+            本周热门
           </h2>
           <button type="button" onClick={() => setHash('/category/all')} className="inline-flex items-center gap-2 text-sm font-semibold text-white transition-colors hover:text-white/80">
             查看全部
@@ -905,7 +1053,7 @@ function AIToolsHome() {
                 <img src={tool.logo} alt={tool.name} className="h-12 w-12 rounded-2xl border border-white/10 object-cover" referrerPolicy="no-referrer" />
                 <div>
                   <p className="text-base font-black text-white">{tool.name}</p>
-                  <Badge label="编辑推荐" />
+                  <Badge label="本周热门" />
                 </div>
               </div>
               <p className="mt-4 text-sm font-semibold text-white/76">{tool.tagline}</p>
@@ -959,6 +1107,7 @@ function AIToolsCategoryPage({ params }: { params: URLSearchParams }) {
   const [mode, setMode] = useState<FilterMode>((params.get('mode') as FilterMode) || 'category');
   const [activeFilter, setActiveFilter] = useState(params.get('value') || '全部');
   const [activeSubFilter, setActiveSubFilter] = useState('全部');
+  const [sortMode, setSortMode] = useState<'recommended' | 'hot' | 'latest' | 'updated' | 'free_first'>('recommended');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 9;
 
@@ -966,6 +1115,7 @@ function AIToolsCategoryPage({ params }: { params: URLSearchParams }) {
     setMode(((params.get('mode') as FilterMode) || 'category') === 'role' ? 'role' : 'category');
     setActiveFilter(params.get('value') || '全部');
     setActiveSubFilter('全部');
+    setSortMode('recommended');
     setCurrentPage(1);
   }, [params]);
 
@@ -988,8 +1138,40 @@ function AIToolsCategoryPage({ params }: { params: URLSearchParams }) {
     });
   }, [activeFilter, activeSubFilter, mode]);
 
-  const totalPages = Math.ceil(filteredTools.length / pageSize);
-  const paginatedTools = filteredTools.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const sortedTools = useMemo(() => {
+    const toolsWithIndex = filteredTools.map((tool, index) => ({ tool, index }));
+
+    toolsWithIndex.sort((a, b) => {
+      if (sortMode === 'recommended') {
+        const featuredDelta = Number(b.tool.featured) - Number(a.tool.featured);
+        if (featuredDelta !== 0) return featuredDelta;
+        return b.tool.rating - a.tool.rating;
+      }
+
+      if (sortMode === 'hot') {
+        const trafficA = Number.parseFloat(String(a.tool.traffic)) || 0;
+        const trafficB = Number.parseFloat(String(b.tool.traffic)) || 0;
+        return trafficB - trafficA;
+      }
+
+      if (sortMode === 'latest') {
+        return a.index - b.index;
+      }
+
+      if (sortMode === 'updated') {
+        const order = { '7天内': 0, '30天内': 1, '90天内': 2 } as const;
+        return order[inferUpdatedBucket(a.index)] - order[inferUpdatedBucket(b.index)];
+      }
+
+      const freeRank = { 免费: 0, Freemium: 1, 付费: 2, 未开放: 3 } as const;
+      return freeRank[normalizePriceType(a.tool.price)] - freeRank[normalizePriceType(b.tool.price)];
+    });
+
+    return toolsWithIndex.map((item) => item.tool);
+  }, [filteredTools, sortMode]);
+
+  const totalPages = Math.ceil(sortedTools.length / pageSize);
+  const paginatedTools = sortedTools.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const primaryFilters =
     mode === 'category'
@@ -1107,6 +1289,33 @@ function AIToolsCategoryPage({ params }: { params: URLSearchParams }) {
       <section className="mt-8">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
           <div>
+            <div className="mb-5 flex flex-col gap-3 rounded-[1.25rem] border border-white/10 bg-white/[0.03] p-4 md:flex-row md:items-center md:justify-between">
+              <div className="text-sm text-white/52">
+                当前结果共 <span className="font-bold text-white">{sortedTools.length}</span> 个
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: '推荐排序', value: 'recommended' },
+                  { label: '热门排序', value: 'hot' },
+                  { label: '最新收录', value: 'latest' },
+                  { label: '最近更新', value: 'updated' },
+                  { label: '免费优先', value: 'free_first' }
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setSortMode(option.value as typeof sortMode)}
+                    className={cn(
+                      'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+                      sortMode === option.value ? 'bg-[#1ed661] text-black' : 'bg-white/[0.04] text-white/56 hover:text-white'
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {paginatedTools.length ? paginatedTools.map((tool) => <ToolGridCard key={tool.id} tool={tool} />) : <Card className="col-span-full p-10 text-center text-white/45">未找到相关工具</Card>}
             </div>
@@ -1229,8 +1438,40 @@ function AIToolsSearchPage({ params }: { params: URLSearchParams }) {
 
 function AIToolDetailPage({ toolId }: { toolId: string | null }) {
   const tool = AI_TOOLS.find((item) => item.id === toolId) || AI_TOOLS[0];
+  const toolIndex = Math.max(0, AI_TOOLS.findIndex((item) => item.id === tool.id));
+  const decisionMeta = buildToolDecisionMeta(tool, toolIndex);
   const [activeFaq, setActiveFaq] = useState<number | null>(0);
-  const relatedTools = AI_TOOLS.filter((item) => item.categoryId === tool.categoryId && item.id !== tool.id).slice(0, 4);
+  const alternativeGroups = {
+    similar: decisionMeta.alternativeToolIds.similar.map((id) => AI_TOOLS.find((item) => item.id === id)).filter(Boolean) as AIToolItem[],
+    cheaper: decisionMeta.alternativeToolIds.cheaper.map((id) => AI_TOOLS.find((item) => item.id === id)).filter(Boolean) as AIToolItem[],
+    chineseFriendly: decisionMeta.alternativeToolIds.chineseFriendly.map((id) => AI_TOOLS.find((item) => item.id === id)).filter(Boolean) as AIToolItem[],
+    popular: decisionMeta.alternativeToolIds.popular.map((id) => AI_TOOLS.find((item) => item.id === id)).filter(Boolean) as AIToolItem[]
+  };
+  const usageChecklist = [
+    { label: '是否需要注册', value: inferRequiresLogin(tool) ? '需要' : '通常不需要' },
+    { label: '是否有免费试用', value: inferHasFreeTrial(tool) ? '有' : '没有' },
+    { label: '是否需要付费后使用核心功能', value: inferCoreFeaturePaywall(tool) },
+    { label: '是否支持中文', value: tool.chinese ? '支持' : '英文为主' },
+    { label: '是否适合新手', value: tool.difficulty === '简单' ? '适合' : '更适合进阶用户' },
+    { label: '是否需科学上网', value: inferNeedsVpn(tool) }
+  ];
+  const heroInfo = [
+    { label: '价格状态', value: tool.price },
+    { label: '所属分类', value: tool.category },
+    { label: '平台支持', value: tool.platform },
+    { label: '中文支持', value: tool.chinese ? '支持中文' : '英文为主' },
+    { label: '最近更新时间', value: decisionMeta.updatedAt },
+    { label: '适合人群', value: tool.suitable.join(' / ') }
+  ];
+  const faqItems = [
+    [`${tool.name} 免费吗？`, `${tool.name} 当前价格状态为 ${tool.price}。${inferHasFreeTrial(tool) ? '可以先用免费额度或试用再决定是否付费。' : '主要需要付费后持续使用。'}`],
+    ['支持中文吗？', tool.chinese ? '支持中文输入或中文使用流程，对中文用户更友好。' : '当前以英文体验为主，中文用户上手成本会更高一些。'],
+    ['适合新手吗？', tool.difficulty === '简单' ? '整体比较适合新手，先用模板或默认流程就能快速试起来。' : '更适合愿意花一点时间学习参数和工作流的用户。'],
+    ['需要安装吗？', `主要通过 ${tool.platform} 使用，一般不需要复杂本地部署。`],
+    ['有官网吗？', tool.officialUrl ? '有，可以直接通过页面顶部的官网按钮进入。' : '当前页面未提供独立官网链接。'],
+    ['和同类工具有什么区别？', `${tool.name} 更突出的点在于${tool.pros.join('、')}，但也要注意${tool.cons.join('、')}。`]
+  ];
+  const editorScore = Math.min(5, Math.max(3.8, Number((tool.rating / 2.2).toFixed(1))));
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-10 md:px-8 md:py-12">
@@ -1240,7 +1481,7 @@ function AIToolDetailPage({ toolId }: { toolId: string | null }) {
       </button>
 
       <section className="mt-6 rounded-[2rem] border border-white/10 bg-white/[0.03] p-8">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+        <div className="grid gap-8 xl:grid-cols-[minmax(0,1.2fr)_360px]">
           <div className="flex flex-col gap-5 md:flex-row">
             <img src={tool.logo} alt={tool.name} className="h-24 w-24 rounded-[1.75rem] border border-white/10 object-cover" referrerPolicy="no-referrer" />
             <div>
@@ -1249,91 +1490,142 @@ function AIToolDetailPage({ toolId }: { toolId: string | null }) {
                 <span className="rounded-full border border-[#1ed661]/20 bg-[#1ed661]/10 px-3 py-1 text-xs font-bold text-[#7af3a6]">推荐关注</span>
                 {tool.featured ? <Badge label="编辑精选" /> : null}
               </div>
-              <p className="mt-3 text-lg text-white/56">{tool.tagline}</p>
-              <div className="mt-4 flex items-center gap-2 text-[#7af3a6]">
+              <p className="mt-3 text-lg text-white/56">{decisionMeta.positioning}</p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {tool.tags.map((tag) => (
+                  <span key={tag} className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/62">{tag}</span>
+                ))}
+              </div>
+              <div className="mt-5 flex items-center gap-2 text-[#7af3a6]">
                 <Star size={18} className="fill-current" />
                 <span className="text-xl font-black">{tool.rating}</span>
               </div>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-white/54">
-                这类工具更适合想缩短生产周期、提升内容质量或快速验证工作流的人群。页面会重点告诉你它适合谁、值不值得试，以及它在哪些场景下最容易出效果。
-              </p>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-white/54">这是一个更偏“决策页”的详情结构，你可以在这里快速判断它是做什么的、适不适合你、值不值得试，以及有哪些替代方案。</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <a href={tool.officialUrl || '#'} target="_blank" rel="noreferrer" className="inline-flex h-12 items-center gap-2 rounded-full bg-[#1ed661] px-6 text-sm font-black text-black">
-              打开官网
-              <ExternalLink size={16} />
-            </a>
-          </div>
-        </div>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <Card className="p-5">
-            <div className="space-y-4 text-sm">
-              <div className="flex items-center justify-between"><span className="text-white/42">价格</span><span className="font-bold text-white">{tool.price}</span></div>
-              <div className="flex items-center justify-between"><span className="text-white/42">适合</span><span className="font-bold text-white">{tool.suitable.join(' / ')}</span></div>
-              <div className="flex items-center justify-between"><span className="text-white/42">平台</span><span className="font-bold text-white">{tool.platform}</span></div>
+          <div className="rounded-[1.5rem] border border-white/10 bg-[#101720]/80 p-5">
+            <div className="flex flex-wrap gap-3">
+              <a href={tool.officialUrl || '#'} target="_blank" rel="noreferrer" className="inline-flex h-12 items-center gap-2 rounded-full bg-[#1ed661] px-6 text-sm font-black text-black">
+                官网
+                <ExternalLink size={16} />
+              </a>
             </div>
-          </Card>
-          <Card className="p-5">
-            <div className="space-y-4 text-sm">
-              <div className="flex items-center justify-between"><span className="text-white/42">月流量</span><span className="font-bold text-white">{tool.traffic}</span></div>
-              <div className="flex items-center justify-between"><span className="text-white/42">中文支持</span><span className="font-bold text-white">{tool.chinese ? '支持' : '不支持'}</span></div>
-              <div className="flex items-center justify-between"><span className="text-white/42">上手难度</span><span className="font-bold text-white">{tool.difficulty}</span></div>
-            </div>
-          </Card>
-          <Card className="p-5">
-            <div className="space-y-4 text-sm">
-              <div><p className="text-white/42">优势</p><p className="mt-2 font-semibold text-[#7af3a6]">{tool.pros.join(' · ')}</p></div>
-              <div><p className="text-white/42">局限</p><p className="mt-2 font-semibold text-rose-300">{tool.cons.join(' · ')}</p></div>
-            </div>
-          </Card>
-        </div>
-      </section>
-
-      <div className="mt-6 flex flex-wrap gap-2">
-        {tool.tags.map((tag) => (
-          <span key={tag} className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-white/62">
-            {tag}
-          </span>
-        ))}
-      </div>
-
-      <section className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-8">
-          <Card className="overflow-hidden">
-            <img src={tool.screenshot} alt={tool.name} className="h-[360px] w-full object-cover" referrerPolicy="no-referrer" />
-          </Card>
-
-          <Card className="p-6">
-            <h2 className="text-2xl font-black text-white">{tool.name} 值得关注的原因</h2>
-            <p className="mt-4 text-base leading-8 text-white/58">{tool.description}</p>
-
-            <h3 className="mt-8 text-xl font-black text-white">你能用它完成什么</h3>
-            <div className="mt-4 space-y-3">
-              {(tool.features || []).map((feature) => (
-                <div key={feature} className="flex items-start gap-3">
-                  <Check size={18} className="mt-0.5 text-[#1ed661]" />
-                  <p className="text-sm leading-7 text-white/62">{feature}</p>
+            <div className="mt-5 space-y-4 text-sm">
+              {heroInfo.map((item) => (
+                <div key={item.label} className="flex items-start justify-between gap-6 border-b border-white/8 pb-4 last:border-b-0 last:pb-0">
+                  <span className="text-white/42">{item.label}</span>
+                  <span className="text-right font-bold text-white">{item.value}</span>
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
 
-            <h3 className="mt-8 text-xl font-black text-white">更适合哪些人现在就试</h3>
-            <p className="mt-4 text-base leading-8 text-white/58">{tool.target || '适合希望用 AI 缩短生产周期、提升内容和工作效率的用户。'}</p>
+      <section className="mt-8 grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-8">
+          <Card className="p-6">
+            <h2 className="text-2xl font-black text-white">适合谁 / 不适合谁</h2>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <div className="rounded-[1.5rem] border border-[#1ed661]/15 bg-[#1ed661]/[0.06] p-5">
+                <h3 className="text-lg font-black text-white">适合谁</h3>
+                <div className="mt-4 space-y-3">
+                  {decisionMeta.suitableFor.map((item) => (
+                    <div key={item} className="flex items-start gap-3">
+                      <Check size={18} className="mt-0.5 text-[#1ed661]" />
+                      <p className="text-sm leading-7 text-white/68">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-5">
+                <h3 className="text-lg font-black text-white">不适合谁</h3>
+                <div className="mt-4 space-y-3">
+                  {decisionMeta.notSuitableFor.map((item) => (
+                    <div key={item} className="flex items-start gap-3">
+                      <span className="mt-1.5 h-2.5 w-2.5 rounded-full bg-rose-300" />
+                      <p className="text-sm leading-7 text-white/68">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="text-2xl font-black text-white">核心功能</h2>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {(tool.features || tool.tags).map((feature) => (
+                <div key={feature} className="rounded-[1.25rem] border border-white/10 bg-white/[0.03] p-4">
+                  <p className="text-sm font-bold text-white">{feature}</p>
+                  <p className="mt-2 text-sm leading-6 text-white/54">{tool.name} 在这个能力点上更适合快速试用和判断是否能进入你的工作流。</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="overflow-hidden">
+            <img src={tool.screenshot} alt={tool.name} className="h-[360px] w-full object-cover" referrerPolicy="no-referrer" />
+            <div className="border-t border-white/8 p-6">
+              <h3 className="text-xl font-black text-white">截图 / 示例输出</h3>
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {decisionMeta.screenshotItems.map((item) => (
+                  <div key={item} className="rounded-[1.1rem] border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white/62">{item}</div>
+                ))}
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="text-2xl font-black text-white">典型使用场景</h2>
+            <div className="mt-5 flex flex-wrap gap-3">
+              {decisionMeta.useCases.map((scene) => (
+                <div key={scene} className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-semibold text-white/68">{scene}</div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="text-2xl font-black text-white">使用门槛</h2>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {usageChecklist.map((item) => (
+                <div key={item.label} className="flex items-center justify-between rounded-[1.1rem] border border-white/10 bg-white/[0.03] px-4 py-4 text-sm">
+                  <span className="text-white/48">{item.label}</span>
+                  <span className="font-bold text-white">{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <h2 className="text-2xl font-black text-white">编辑点评</h2>
+            <div className="mt-5 grid gap-5 md:grid-cols-2">
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-5">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/38">一句话评价</p>
+                <p className="mt-3 text-base leading-8 text-white/66">{tool.description}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-5">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/38">推荐指数</p>
+                <p className="mt-3 text-3xl font-black text-[#7af3a6]">{editorScore} / 5</p>
+                <p className="mt-3 text-sm leading-7 text-white/58">{tool.recommendation || `${tool.name} 更适合大多数轻量到中度使用场景，先试一轮很容易判断是否值得继续投入。`}</p>
+              </div>
+              <div className="rounded-[1.5rem] border border-[#1ed661]/15 bg-[#1ed661]/[0.06] p-5">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/38">核心优势</p>
+                <div className="mt-4 space-y-3">{tool.pros.map((item) => <p key={item} className="text-sm leading-7 text-white/70">{item}</p>)}</div>
+              </div>
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-5">
+                <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/38">主要短板</p>
+                <div className="mt-4 space-y-3">{tool.cons.map((item) => <p key={item} className="text-sm leading-7 text-white/70">{item}</p>)}</div>
+              </div>
+            </div>
           </Card>
 
           <Card className="overflow-hidden">
             <div className="border-b border-white/8 px-6 py-4">
               <h3 className="text-xl font-black text-white">常见问题 FAQ</h3>
             </div>
-            {[
-              [`${tool.name} 是免费的吗？`, `${tool.name} 提供的收费策略为 ${tool.price}，一般可先用基础额度试试流程是否适合自己。`],
-              ['支持中文吗？', tool.chinese ? '支持中文界面或中文输入，整体上手会更顺。' : '当前主要是英文体验，如有需要可以配合翻译工具使用。'],
-              ['适合新手吗？', `${tool.difficulty === '简单' ? '比较适合' : '需要一点学习成本'}，建议先从模板或官方示例开始。`],
-              ['适合什么场景？', `更适合 ${tool.suitable.join('、')} 这类场景，也可以作为团队内容生产或工作流的一部分。`]
-            ].map(([question, answer], index) => (
+            {faqItems.map(([question, answer], index) => (
               <div key={question} className="border-b border-white/8 last:border-b-0">
                 <button type="button" onClick={() => setActiveFaq(activeFaq === index ? null : index)} className="flex w-full items-center justify-between px-6 py-4 text-left text-sm font-bold text-white">
                   {question}
@@ -1353,33 +1645,49 @@ function AIToolDetailPage({ toolId }: { toolId: string | null }) {
 
         <aside className="space-y-6">
           <Card className="p-6">
-            <h3 className="text-lg font-black text-white">类似工具推荐</h3>
-            <div className="mt-5 space-y-4">
-              {relatedTools.map((item) => (
-                <button key={item.id} type="button" onClick={() => setHash(`/tool/${item.id}`)} className="flex w-full items-center gap-3 text-left">
-                  <img src={item.logo} alt={item.name} className="h-11 w-11 rounded-xl border border-white/10 object-cover" referrerPolicy="no-referrer" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-white">{item.name}</p>
-                    <p className="truncate text-xs text-white/42">{item.tagline}</p>
+            <h3 className="text-lg font-black text-white">替代工具推荐</h3>
+            <div className="mt-5 space-y-5">
+              {[
+                { title: '相似工具', items: alternativeGroups.similar },
+                { title: '更便宜的替代', items: alternativeGroups.cheaper },
+                { title: '更适合中文用户', items: alternativeGroups.chineseFriendly },
+                { title: '同类热门', items: alternativeGroups.popular }
+              ].map((group) => (
+                <div key={group.title}>
+                  <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/38">{group.title}</p>
+                  <div className="mt-3 space-y-3">
+                    {group.items.slice(0, 3).map((item) => (
+                      <button key={`${group.title}-${item.id}`} type="button" onClick={() => setHash(`/tool/${item.id}`)} className="flex w-full items-center gap-3 text-left">
+                        <img src={item.logo} alt={item.name} className="h-11 w-11 rounded-xl border border-white/10 object-cover" referrerPolicy="no-referrer" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-bold text-white">{item.name}</p>
+                          <p className="truncate text-xs text-white/42">{item.tagline}</p>
+                        </div>
+                        <span className="text-xs font-bold text-[#7af3a6]">{item.rating}</span>
+                      </button>
+                    ))}
                   </div>
-                  <span className="text-xs font-bold text-[#7af3a6]">{item.rating}</span>
-                </button>
+                </div>
               ))}
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="text-lg font-black text-white">可信度模块</h3>
+            <div className="mt-5 space-y-4 text-sm">
+              <div className="flex items-center justify-between"><span className="text-white/42">收录时间</span><span className="font-bold text-white">{decisionMeta.addedAt}</span></div>
+              <div className="flex items-center justify-between"><span className="text-white/42">最近验证时间</span><span className="font-bold text-white">{decisionMeta.verifiedAt}</span></div>
+              <div className="flex items-center justify-between"><span className="text-white/42">官网状态</span><span className="font-bold text-white">{tool.officialUrl ? '可访问官网入口' : '暂无官网链接'}</span></div>
+              <div className="flex items-center justify-between"><span className="text-white/42">数据更新时间</span><span className="font-bold text-white">{decisionMeta.updatedAt}</span></div>
             </div>
           </Card>
 
           <Card className="p-6">
             <h3 className="text-lg font-black text-white">相关入口</h3>
             <div className="mt-5 space-y-3 text-sm">
-              <button type="button" onClick={() => setHash('/category/all', { mode: 'category', value: `AI${tool.category}工具` })} className="block text-left text-white/62 transition-colors hover:text-white">
-                查看同类工具
-              </button>
-              <button type="button" onClick={() => setHash('/search', { q: tool.name })} className="block text-left text-white/62 transition-colors hover:text-white">
-                搜索相关结果
-              </button>
-              <button type="button" onClick={() => setHash('/')} className="block text-left text-white/62 transition-colors hover:text-white">
-                返回工具首页
-              </button>
+              <button type="button" onClick={() => setHash('/category/all', { mode: 'category', value: `AI${tool.category}工具` })} className="block text-left text-white/62 transition-colors hover:text-white">查看同类工具</button>
+              <button type="button" onClick={() => setHash('/search', { q: tool.name })} className="block text-left text-white/62 transition-colors hover:text-white">搜索相关结果</button>
+              <button type="button" onClick={() => setHash('/')} className="block text-left text-white/62 transition-colors hover:text-white">返回工具首页</button>
             </div>
           </Card>
         </aside>
@@ -1390,13 +1698,14 @@ function AIToolDetailPage({ toolId }: { toolId: string | null }) {
 
 export default function AIToolsPage({ hash }: { hash: string }) {
   const { pathname, params } = useMemo(() => parseAIToolsHash(hash), [hash]);
+  const toolId = pathname.startsWith('/tool/') ? pathname.replace('/tool/', '') : null;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [hash]);
 
   if (pathname.startsWith('/tool/')) {
-    return <AIToolsPage2 hash={hash.replace(/^#\/ai-tools/, '#/ai-tools-2')} />;
+    return <AIToolDetailPage toolId={toolId} />;
   }
 
   if (pathname.startsWith('/search')) {
