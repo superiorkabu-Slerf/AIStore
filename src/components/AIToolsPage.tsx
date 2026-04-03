@@ -22,6 +22,7 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import { Card, Badge } from './Common';
 import { cn } from '../lib/utils';
+import AIToolsPage2 from './AIToolsPage2';
 
 type AIToolCategoryId =
   | 'chat'
@@ -1389,14 +1390,13 @@ function AIToolDetailPage({ toolId }: { toolId: string | null }) {
 
 export default function AIToolsPage({ hash }: { hash: string }) {
   const { pathname, params } = useMemo(() => parseAIToolsHash(hash), [hash]);
-  const toolId = pathname.startsWith('/tool/') ? pathname.replace('/tool/', '') : null;
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [hash]);
 
   if (pathname.startsWith('/tool/')) {
-    return <AIToolDetailPage toolId={toolId} />;
+    return <AIToolsPage2 hash={hash.replace(/^#\/ai-tools/, '#/ai-tools-2')} />;
   }
 
   if (pathname.startsWith('/search')) {
