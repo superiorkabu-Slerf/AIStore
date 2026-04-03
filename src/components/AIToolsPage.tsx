@@ -875,21 +875,21 @@ function Pagination({ currentPage, totalPages, onPageChange }: { currentPage: nu
   );
 }
 
-function TopicCard({ title, subtitle, badge, tools }: { title: string; subtitle: string; badge: string; tools: AIToolItem[] }) {
+function TopicCard({ title, subtitle, badge, tools }: { title: string; subtitle: string; badge?: string; tools: AIToolItem[] }) {
   const [open, setOpen] = useState(false);
 
   return (
     <div className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
-      <Card className={cn('h-48 p-5', open ? 'rounded-b-none border-b-transparent' : '')}>
+      <Card className={cn('min-h-[240px] p-6', open ? 'rounded-b-none border-b-transparent' : '')}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <Badge label={badge} />
+            {badge ? <Badge label={badge} /> : null}
             <h3 className="mt-3 text-2xl font-black tracking-tight text-white">{title}</h3>
             <p className="mt-2 text-sm leading-6 text-white/52">{subtitle}</p>
           </div>
           <ChevronDown className={cn('mt-1 text-white/28 transition-transform', open ? 'rotate-180 text-[#1ed661]' : '')} />
         </div>
-        <div className="mt-auto flex items-center gap-3">
+        <div className="mt-8 flex items-center gap-3">
           {tools.slice(0, 4).map((tool) => (
             <div key={tool.id} className="h-14 w-14 overflow-hidden rounded-2xl border border-white/10 bg-[#111923]">
               <img src={tool.logo} alt={tool.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
@@ -930,10 +930,9 @@ function NewsSpotlightCard() {
 
   return (
     <div className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
-      <Card className={cn('h-48 p-5', open ? 'rounded-b-none border-b-transparent' : '')}>
+      <Card className={cn('min-h-[240px] p-6', open ? 'rounded-b-none border-b-transparent' : '')}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <Badge label="NEWS" />
             <h3 className="mt-3 text-2xl font-black tracking-tight text-white">最新AI情报</h3>
             <p className="mt-2 text-xs text-white/36">2026年04月02日</p>
           </div>
@@ -1029,8 +1028,8 @@ function AIToolsHome() {
 
       <section className="mx-auto mt-10 max-w-7xl">
         <div className="grid gap-6 lg:grid-cols-3">
-          <TopicCard title="一起养龙虾专题" subtitle="把压缩包里的行业专题内容保留下来" badge="最新" tools={[AI_TOOLS[1], AI_TOOLS[15], AI_TOOLS[16], AI_TOOLS[4]].filter(Boolean)} />
-          <TopicCard title="编辑精选" subtitle="把压缩包里的行业专题内容保留下来" badge="最新" tools={[AI_TOOLS[1], AI_TOOLS[15], AI_TOOLS[16], AI_TOOLS[4]].filter(Boolean)} />
+          <TopicCard title="一起养龙虾" subtitle="这个模块是行业专题入口，用一组相关工具帮助你快速理解某个垂直场景能用哪些 AI 产品。" tools={[AI_TOOLS[1], AI_TOOLS[15], AI_TOOLS[16], AI_TOOLS[4]].filter(Boolean)} />
+          <TopicCard title="编辑精选" subtitle="这个模块是人工挑选入口，适合先看一组更值得优先点击和试用的代表性工具。" tools={[AI_TOOLS[1], AI_TOOLS[15], AI_TOOLS[16], AI_TOOLS[4]].filter(Boolean)} />
           <NewsSpotlightCard />
         </div>
       </section>
@@ -1291,7 +1290,7 @@ function AIToolsCategoryPage({ params }: { params: URLSearchParams }) {
           <div>
             <div className="mb-5 flex flex-col gap-3 rounded-[1.25rem] border border-white/10 bg-white/[0.03] p-4 md:flex-row md:items-center md:justify-between">
               <div className="text-sm text-white/52">
-                当前结果共 <span className="font-bold text-white">{sortedTools.length}</span> 个
+                共 <span className="font-bold text-white">{sortedTools.length}</span> 个
               </div>
               <div className="flex flex-wrap gap-2">
                 {[
