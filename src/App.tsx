@@ -36,7 +36,9 @@ import {
   Headphones,
   Pause,
   CalendarDays,
-  UserRound
+  UserRound,
+  Mail,
+  Github
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { NEWS_DATA, TOOLS_DATA, GLOSSARY_DATA, SPECIALS_DATA } from './data';
@@ -239,6 +241,32 @@ const LEARNING_PATH_7D: LearningPathDay[] = [
     deliverable: '学习复盘文档 + 下周迭代计划',
     learners: 13117,
     targetHash: '#/list?tab=article'
+  }
+];
+
+const FOOTER_NAV_ITEMS = [
+  { label: 'AI 工具库', href: '#/ai_tools' },
+  { label: '基础大模型', href: '#/model_hub' },
+  { label: 'Skill 插件', href: '#/list?tab=tutorial' },
+  { label: 'AI 百科全书', href: '#/list?tab=knowledge' },
+  { label: '基础设施', href: '#/infrastructure' }
+];
+
+const FOOTER_QR_ITEMS = [
+  {
+    label: '扫码加微信群',
+    imageSrc: '/images/wechat-group-card.svg',
+    imageAlt: 'WeChat QR',
+    imageClassName: 'h-[150px] w-[150px]',
+    frameClassName: 'border-2 border-white/80 shadow-[0_0_0_1px_rgba(255,255,255,0.08)]'
+  },
+  {
+    label: '点击/扫码加QQ',
+    href: 'https://qm.qq.com/q/uEEWtWwBea',
+    imageSrc: '/images/qq-group-card.svg',
+    imageAlt: 'QQ Group QR',
+    imageClassName: 'h-[150px] w-[150px]',
+    frameClassName: 'border-2 border-[#7dd3fc]/70 shadow-[0_0_0_1px_rgba(255,255,255,0.06)]'
   }
 ];
 
@@ -4031,18 +4059,114 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <footer className="mt-24 border-t border-white/5 py-12 bg-[#0d1117]">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="flex items-center gap-2 opacity-50 grayscale">
-            <TrendingUp className="text-[#1ed661] w-6 h-6" />
-            <span className="text-xl font-black tracking-tighter">AISTORE</span>
+      <footer className="mt-24 border-t border-[#1f2937] bg-[#10141d] px-5 pb-8 pt-20 text-[#e5e7eb] md:px-8 md:pt-[100px]">
+        <div className="mx-auto grid max-w-[1300px] grid-cols-1 gap-12 lg:grid-cols-[1.35fr_0.9fr_1.75fr] lg:gap-16">
+          <div className="space-y-5">
+            <div className="flex items-center text-[22px] font-semibold tracking-tight text-white">
+              <span className="mr-3 text-[#00e676]">▲</span>
+              <span>AISTORE</span>
+            </div>
+            <p className="max-w-[360px] text-[14px] font-normal leading-7 text-[#c7ced8]">
+              AI STORE 致力于成为 AI 时代的 App Store。我们一站式聚合全网优质的大模型与 AI 智能工具，连接智能与创新。
+            </p>
           </div>
-          <div className="flex gap-8 text-sm text-gray-500">
-            <a href="#" className="hover:text-white transition-colors">隐私政策</a>
-            <a href="#" className="hover:text-white transition-colors">服务条款</a>
-            <a href="#" className="hover:text-white transition-colors">联系我们</a>
+
+          <div className="lg:pl-4">
+            <h4 className="mb-6 text-sm font-medium tracking-[0.08em] text-[#f3f4f6]">资源导航</h4>
+            <ul className="space-y-3.5">
+              {FOOTER_NAV_ITEMS.map((item) => (
+                <li key={item.label}>
+                  <a href={item.href} className="inline-flex items-center text-[14px] font-normal text-[#9ca3af] transition-all duration-300 hover:translate-x-0.5 hover:text-[#00e676]">
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="text-xs text-gray-600">© 2026 Aistore 传媒集团。保留所有权利。</div>
+
+          <div className="lg:pl-6">
+            <h4 className="mb-3 text-sm font-medium tracking-[0.08em] text-[#f3f4f6]">加入 AISTORE.CLUB</h4>
+            <p className="mb-6 max-w-[420px] text-[13px] leading-6 text-[#95a0af]">
+              扫码加入社群，获取最新 AI 工具、模型动态与站内精选内容更新。
+            </p>
+
+            <div className="mb-8 flex flex-wrap gap-6">
+              {FOOTER_QR_ITEMS.map((item) => {
+                const content = (
+                  <>
+                    <img
+                      src={item.imageSrc}
+                      alt={item.imageAlt}
+                      className={cn(
+                        'mb-3 rounded-xl bg-white p-1.5 transition-transform duration-300 ease-out group-hover:scale-110',
+                        item.frameClassName,
+                        item.imageClassName
+                      )}
+                    />
+                    <span className="text-xs font-normal text-[#a7b0bd] transition-colors duration-300 group-hover:text-[#f9fafb]">{item.label}</span>
+                  </>
+                );
+
+                if (item.href) {
+                  return (
+                    <a
+                      key={item.label}
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group flex flex-col items-center text-center text-[#9ca3af] transition-colors duration-300"
+                    >
+                      {content}
+                    </a>
+                  );
+                }
+
+                return (
+                  <div key={item.label} className="group flex flex-col items-center text-center text-[#9ca3af]">
+                    {content}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-col gap-3.5">
+              <a
+                href="mailto:BD@slerf.tools"
+                className="flex items-center text-[14px] font-normal text-[#9ca3af] transition-all duration-300 hover:translate-x-0.5 hover:text-[#00e676]"
+              >
+                <Mail className="mr-3 h-[18px] w-[18px]" />
+                商务：BD@slerf.tools
+              </a>
+              <a
+                href="https://github.com/aistore-labs/aistore"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center text-[14px] font-normal text-[#9ca3af] transition-all duration-300 hover:translate-x-0.5 hover:text-[#00e676]"
+              >
+                <Github className="mr-3 h-[18px] w-[18px]" />
+                GitHub: aistore-labs
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div className="mx-auto mt-16 flex max-w-[1300px] flex-col items-center justify-between gap-4 border-t border-[#1f2937] pt-7 text-center text-[13px] text-[#6b7280] lg:mt-20 lg:flex-row lg:text-left">
+          <div>&copy; 2026 AISTORE. CLUB. ALL RIGHTS RESERVED.</div>
+          <div className="flex flex-wrap items-center justify-center leading-8 lg:justify-end">
+            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer" className="transition-colors duration-300 hover:text-[#00e676]">
+              粤ICP备20260408号-1
+            </a>
+            <span className="mx-3 text-[#374151]">|</span>
+            <a
+              href="http://www.beian.gov.cn/portal/registerSystemInfo"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center transition-colors duration-300 hover:text-[#00e676]"
+            >
+              <Shield className="mr-1.5 h-[15px] w-[15px]" />
+              粤公网安备 44030002000000号
+            </a>
+          </div>
         </div>
       </footer>
     </div>
