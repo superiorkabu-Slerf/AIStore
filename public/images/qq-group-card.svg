@@ -1,0 +1,121 @@
+<svg width="420" height="420" viewBox="0 0 420 420" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="qq-dot" x1="36" y1="42" x2="383" y2="388" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#44D3EE"/>
+      <stop offset="0.52" stop-color="#5DADF8"/>
+      <stop offset="1" stop-color="#B8A1F8"/>
+    </linearGradient>
+  </defs>
+  <rect width="420" height="420" rx="28" fill="white"/>
+  <g fill="url(#qq-dot)">
+    <circle cx="64" cy="74" r="22"/>
+    <circle cx="64" cy="74" r="11" fill="white"/>
+    <circle cx="355" cy="74" r="22"/>
+    <circle cx="355" cy="74" r="11" fill="white"/>
+    <circle cx="64" cy="356" r="22"/>
+    <circle cx="64" cy="356" r="11" fill="white"/>
+
+    <circle cx="155" cy="30" r="5.5"/>
+    <circle cx="210" cy="30" r="5.5"/>
+    <circle cx="264" cy="30" r="5.5"/>
+    <circle cx="318" cy="30" r="5.5"/>
+    <circle cx="188" cy="57" r="5.5"/>
+    <circle cx="210" cy="57" r="5.5"/>
+    <circle cx="232" cy="57" r="5.5"/>
+    <circle cx="254" cy="57" r="5.5"/>
+    <circle cx="298" cy="57" r="5.5"/>
+    <circle cx="318" cy="57" r="5.5"/>
+    <circle cx="348" cy="57" r="5.5"/>
+    <circle cx="151" cy="84" r="5.5"/>
+    <circle cx="172" cy="84" r="5.5"/>
+    <circle cx="210" cy="84" r="5.5"/>
+    <circle cx="276" cy="84" r="5.5"/>
+    <circle cx="299" cy="84" r="5.5"/>
+    <circle cx="348" cy="84" r="5.5"/>
+    <circle cx="150" cy="111" r="5.5"/>
+    <circle cx="172" cy="111" r="5.5"/>
+    <circle cx="210" cy="111" r="5.5"/>
+    <circle cx="232" cy="111" r="5.5"/>
+    <circle cx="254" cy="111" r="5.5"/>
+    <circle cx="299" cy="111" r="5.5"/>
+    <circle cx="320" cy="111" r="5.5"/>
+    <circle cx="342" cy="111" r="5.5"/>
+    <circle cx="130" cy="139" r="5.5"/>
+    <circle cx="150" cy="139" r="5.5"/>
+    <circle cx="172" cy="139" r="5.5"/>
+    <circle cx="210" cy="139" r="5.5"/>
+    <circle cx="232" cy="139" r="5.5"/>
+    <circle cx="298" cy="139" r="5.5"/>
+    <circle cx="320" cy="139" r="5.5"/>
+    <circle cx="341" cy="139" r="5.5"/>
+    <circle cx="86" cy="192" r="5.5"/>
+    <circle cx="124" cy="192" r="5.5"/>
+    <circle cx="150" cy="192" r="5.5"/>
+    <circle cx="172" cy="192" r="5.5"/>
+    <circle cx="194" cy="192" r="5.5"/>
+    <circle cx="210" cy="192" r="5.5"/>
+    <circle cx="252" cy="192" r="5.5"/>
+    <circle cx="299" cy="192" r="5.5"/>
+    <circle cx="348" cy="192" r="5.5"/>
+    <circle cx="370" cy="192" r="5.5"/>
+    <circle cx="79" cy="220" r="5.5"/>
+    <circle cx="124" cy="220" r="5.5"/>
+    <circle cx="171" cy="220" r="5.5"/>
+    <circle cx="210" cy="220" r="5.5"/>
+    <circle cx="252" cy="220" r="5.5"/>
+    <circle cx="278" cy="220" r="5.5"/>
+    <circle cx="321" cy="220" r="5.5"/>
+    <circle cx="368" cy="220" r="5.5"/>
+    <circle cx="58" cy="247" r="5.5"/>
+    <circle cx="79" cy="247" r="5.5"/>
+    <circle cx="105" cy="247" r="5.5"/>
+    <circle cx="124" cy="247" r="5.5"/>
+    <circle cx="150" cy="247" r="5.5"/>
+    <circle cx="194" cy="247" r="5.5"/>
+    <circle cx="278" cy="247" r="5.5"/>
+    <circle cx="299" cy="247" r="5.5"/>
+    <circle cx="342" cy="247" r="5.5"/>
+    <circle cx="363" cy="247" r="5.5"/>
+    <circle cx="392" cy="247" r="5.5"/>
+    <circle cx="58" cy="274" r="5.5"/>
+    <circle cx="105" cy="274" r="5.5"/>
+    <circle cx="130" cy="274" r="5.5"/>
+    <circle cx="150" cy="274" r="5.5"/>
+    <circle cx="171" cy="274" r="5.5"/>
+    <circle cx="278" cy="274" r="5.5"/>
+    <circle cx="321" cy="274" r="5.5"/>
+    <circle cx="341" cy="274" r="5.5"/>
+    <circle cx="387" cy="274" r="5.5"/>
+    <circle cx="130" cy="301" r="5.5"/>
+    <circle cx="171" cy="301" r="5.5"/>
+    <circle cx="321" cy="301" r="5.5"/>
+    <circle cx="341" cy="301" r="5.5"/>
+    <circle cx="86" cy="328" r="5.5"/>
+    <circle cx="124" cy="328" r="5.5"/>
+    <circle cx="171" cy="328" r="5.5"/>
+    <circle cx="194" cy="328" r="5.5"/>
+    <circle cx="278" cy="328" r="5.5"/>
+    <circle cx="299" cy="328" r="5.5"/>
+    <circle cx="341" cy="328" r="5.5"/>
+    <circle cx="363" cy="328" r="5.5"/>
+    <circle cx="391" cy="328" r="5.5"/>
+    <circle cx="58" cy="355" r="5.5"/>
+    <circle cx="105" cy="355" r="5.5"/>
+    <circle cx="127" cy="355" r="5.5"/>
+    <circle cx="150" cy="355" r="5.5"/>
+    <circle cx="171" cy="355" r="5.5"/>
+    <circle cx="299" cy="355" r="5.5"/>
+    <circle cx="342" cy="355" r="5.5"/>
+    <circle cx="385" cy="355" r="5.5"/>
+    <circle cx="130" cy="382" r="5.5"/>
+    <circle cx="194" cy="382" r="5.5"/>
+    <circle cx="218" cy="382" r="5.5"/>
+    <circle cx="241" cy="382" r="5.5"/>
+    <circle cx="263" cy="382" r="5.5"/>
+    <circle cx="298" cy="382" r="5.5"/>
+    <circle cx="342" cy="382" r="5.5"/>
+    <circle cx="385" cy="382" r="5.5"/>
+  </g>
+  <rect x="168" y="174" width="84" height="84" rx="21" fill="#63AEF8"/>
+  <path d="M211 189C199 189 190 200 190 214C190 225 196 235 204 240L200 246L208 243L211 250L214 243L222 246L218 240C226 235 232 225 232 214C232 200 223 189 211 189Z" fill="white"/>
+</svg>
